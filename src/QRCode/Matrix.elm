@@ -8,9 +8,9 @@ module QRCode.Matrix exposing
 
 import Array exposing (Array)
 import Bitwise exposing (shiftLeftBy, shiftRightBy, shiftRightZfBy)
-import ParseInt
-import QRCode.Encode as Encode exposing (ECLevel, ecLevelToInt)
 import QRCode.Error exposing (Error(..))
+import QRCode.Helpers exposing (transpose)
+import QRCode.Encode as Encode exposing (ECLevel, ecLevelToInt)
 
 
 type alias Model =
@@ -25,15 +25,12 @@ type alias Matrix = Array (Maybe Module)
 type alias Module = ( Bool, Bool ) -- ( isReserved, isDark )
 
 
-
 apply : ( Encode.Model, List Int ) -> Result Error Model
-apply ( { ecLevel, groupInfo }, data )  =
+apply ( { ecLevel, groupInfo }, bytes )  =
     let
         version = groupInfo.version
 
         size = ((version - 1) * 4) + 21
-
-        dataStr = dataIntToBinary data
 
     in
         Array.initialize (size * size) (always Nothing)
@@ -45,7 +42,7 @@ apply ( { ecLevel, groupInfo }, data )  =
             |> darkModule version size
             |> timingPattern size
             |> alignmentPattern version size
-            |> Result.map (addData size dataStr)
+            |> Result.map (addData size bytes)
             |> Result.map (getBestMask size)
             |> Result.map (setFormatInfo ecLevel size)
             |> Result.map (Model size)
@@ -82,17 +79,15 @@ setFinder size rowOffset colOffset ( row, col ) matrix =
         else
             Array.set
                 (getIndex size finalRow finalCol)
-                (finderColor row col)
+                (Just ( True, finderColor row col ))
                 matrix
 
 
-finderColor : Int -> Int -> Maybe Module
+finderColor : Int -> Int -> Bool
 finderColor row col =
-    if (1 <= row && row <= 7 && (col == 1 || col == 7))
+    (1 <= row && row <= 7 && (col == 1 || col == 7))
         || (1 <= col && col <= 7 && (row == 1 || row == 7))
         || (3 <= row && row <= 5 && 3 <= col && col <= 5)
-            then Just ( True, True )
-            else Just ( True, False )
 
 
 
@@ -392,26 +387,27 @@ initPlacement size =
     }
 
 
-addData : Int -> String -> Matrix -> Matrix
-addData size data matrix =
-    data
-        |> String.toList
-        |> flip (addDataModule (initPlacement size)) matrix
+addData : Int -> List Int -> Matrix -> Matrix
+addData size bytes matrix =
+    addDataModule (initPlacement size) bytes 0 matrix
 
 
-addDataModule : Placement -> List Char -> Matrix -> Matrix
-addDataModule ({ size, row, col } as placement) data matrix =
-    case data of
+addDataModule : Placement -> List Int -> Int -> Matrix -> Matrix
+addDataModule ({ size, row, col } as placement) bytes offset matrix =
+    case bytes of
         [] ->
             matrix
 
         head :: tail ->
-            if col == 6 then
+            if offset >= 8 then
+                addDataModule placement tail 0 matrix
+
+            else if col == 6 then
                 addDataModule
                     { placement
                         | col = col - 1
                         , isRight = True
-                    } data matrix
+                    } bytes offset matrix
 
             else if row < 0 then
                 addDataModule
@@ -420,7 +416,7 @@ addDataModule ({ size, row, col } as placement) data matrix =
                         , col = col - 2
                         , isRight = True
                         , isUp = False
-                    } data matrix
+                    } bytes offset matrix
 
             else if row >= size then
                 addDataModule
@@ -429,17 +425,18 @@ addDataModule ({ size, row, col } as placement) data matrix =
                         , col = col - 2
                         , isRight = True
                         , isUp = True
-                    } data matrix
+                    } bytes offset matrix
 
             else if isOccupy row col size matrix then
                 addDataModule
                     (nextModule placement)
-                    data matrix
+                    bytes offset matrix
 
             else
-                Array.set (getIndex size row col)
-                    (Just ( False, bitToColor head )) matrix
-                        |> addDataModule (nextModule placement) tail
+                setDataModule placement head offset matrix
+                    |> addDataModule
+                        (nextModule placement)
+                        bytes (offset + 1)
 
 
 nextModule : Placement -> Placement
@@ -465,8 +462,17 @@ nextModule ({ row, col, isRight, isUp } as placement) =
         }
 
 
-bitToColor : Char -> Bool
-bitToColor char = char == '1'
+setDataModule : Placement -> Int -> Int -> Matrix -> Matrix
+setDataModule { size, row, col } byte offset =
+    Array.set (getIndex size row col)
+        (Just ( False, bitToColor byte offset ))
+
+
+bitToColor : Int -> Int -> Bool
+bitToColor byte offset =
+    Bitwise.shiftRightBy (7 - offset) byte
+        |> Bitwise.and 1
+        |> (==) 1
 
 
 
@@ -570,8 +576,6 @@ getBestMask_ size matrix mask maybeMin =
                 Nothing ->
                     ( maskScore, mask, maskedMatrix )
 
-        x = Debug.log (toString mask ++ ": ") maskScore
-
     in
         Just return
 
@@ -588,7 +592,7 @@ getMaskScore size matrix =
 
 
         transposedRowList =
-            Encode.transpose rowList
+            transpose rowList
 
     in
         rule1Score rowList
@@ -804,15 +808,8 @@ getBCHDigit int =
 
 
 ---------------------------------------------------------------------
--- Helpers
+-- Data
 ---------------------------------------------------------------------
-
-
-dataIntToBinary : List Int -> String
-dataIntToBinary data =
-    List.map (ParseInt.toRadixUnsafe 2) data
-        |> List.map (String.padLeft 8 '0')
-        |> String.concat
 
 
 alignmentPatternData : Array (List Int)

@@ -4,6 +4,7 @@ module QRCode.ErrorCorrection exposing (get)
 import Array exposing (Array)
 import Bitwise
 import QRCode.Error exposing (Error(..))
+import QRCode.Helpers exposing (listResult)
 
 
 
@@ -201,22 +202,3 @@ getLog index =
     else
         Array.get (index - 1) logTable
             |> Result.fromMaybe (LogTableException index)
-
-
-
----------------------------------------------------------------------
--- Helpers
----------------------------------------------------------------------
-
-
-listResult : ( a -> Result x b ) -> List b -> List a -> Result x (List b)
-listResult fun listb lista =
-    case lista of
-        head :: tail ->
-            fun head
-                |> Result.map (\r -> r :: listb)
-                |> Result.andThen (flip (listResult fun) tail)
-
-        [] ->
-            Result.Ok (List.reverse listb)
-

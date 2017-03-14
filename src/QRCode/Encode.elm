@@ -1,23 +1,47 @@
 module QRCode.Encode exposing (..)
 
 
-import Char
-import Dict exposing (Dict)
 import Regex exposing (Regex)
 import Bitwise as Bit exposing (shiftLeftBy, shiftRightBy)
-import ParseInt
+import QRCode.Error exposing (Error(..))
+import QRCode.Helpers exposing (listResult, breakStr, transpose)
 import QRCode.GroupInfo as Group exposing (GroupInfo)
 import QRCode.ErrorCorrection as ErrorCorrection
-import QRCode.Error exposing (Error(..))
+import QRCode.Encode.Numeric as Numeric
+import QRCode.Encode.Alphanumeric as Alphanumeric
+import QRCode.Encode.Byte as Byte
+import QRCode.Encode.UTF8 as UTF8
 
 
 
-type alias Model =
-    { inputStr  : String
-    , ecLevel   : ECLevel
-    , mode      : Mode
-    , groupInfo : GroupInfo
-    }
+encode : String -> ECLevel -> Result Error ( Model, List Int )
+encode inputStr ecLevel =
+    let
+        mode = selectMode inputStr
+
+    in
+        inputStr
+            |> encoder mode
+            |> Result.andThen (selectVersion inputStr ecLevel mode)
+            |> Result.map addInfoAndFinalBits
+            |> Result.andThen toBlocks
+            |> Result.andThen getErrorCorrection
+            |> Result.map concatTranspose
+
+
+encoder : Mode -> ( String -> Result Error (List ( Int, Int )) )
+encoder mode =
+    case mode of
+        Numeric      -> Numeric.encode
+        Alphanumeric -> Alphanumeric.encode
+        Byte         -> Byte.encode
+        UTF8         -> UTF8.encode
+
+
+
+---------------------------------------------------------------------
+-- Mode
+---------------------------------------------------------------------
 
 
 type Mode
@@ -27,330 +51,68 @@ type Mode
     | UTF8
 
 
-encode : String -> ECLevel -> Result Error ( Model, List Int )
-encode inputStr ecLevel =
-    let
-        mode = selectMode inputStr
-
-        encodedBits =
-            case mode of
-                Numeric      -> numeric inputStr
-                Alphanumeric -> alphanumeric inputStr
-                Byte         -> byte inputStr []
-                UTF8         -> utf8 inputStr []
-
-    in
-        encodedBits
-            |> Result.map String.concat
-            |> Result.andThen (selectVersion inputStr ecLevel mode)
-            |> Result.andThen infoAndFinalBits
-            |> Result.andThen toBlocks
-            |> Result.andThen errorCorrection
-            |> Result.map finalFormat
-
-
-
----------------------------------------------------------------------
--- Error Correction
----------------------------------------------------------------------
-
-
-type ECLevel = L | M | Q | H
-
-
-ecLevelToInt : ECLevel -> Int
-ecLevelToInt ecLevel =
-    case ecLevel of
-        L -> 1
-        M -> 0
-        Q -> 3
-        H -> 2
-
-
-errorCorrection : ( Model, List (List Int) ) -> Result Error ( Model, List (List Int), List (List Int) )
-errorCorrection ( model, dataBlocks ) =
-    ErrorCorrection.get model.groupInfo.ecPerBlock dataBlocks
-        |> Result.map ((,,) model dataBlocks)
-
-
-
----------------------------------------------------------------------
--- Mode
----------------------------------------------------------------------
-
-
 selectMode : String -> Mode
 selectMode inputStr =
-    if Regex.contains numericRegex inputStr then
+    if Regex.contains Numeric.regex inputStr then
         Numeric
 
-    else if Regex.contains alphanumericMode inputStr then
+    else if Regex.contains Alphanumeric.regex inputStr then
         Alphanumeric
 
-    else if Regex.contains byteMode inputStr then
+    else if Regex.contains Byte.regex inputStr then
         Byte
 
     else
         UTF8
 
 
-numericRegex : Regex
-numericRegex =
-    Regex.regex "^[0-9]+$"
-
-
-alphanumericMode : Regex
-alphanumericMode =
-    Regex.regex "^[0-9A-Z $%*+\\-.\\/:]+$"
-
-
-byteMode : Regex
-byteMode =
-    Regex.regex "^[\\u0000-\\u00ff]+$"
-
-
-modeIndicator : Mode -> String
+modeIndicator : Mode -> Int
 modeIndicator mode =
     case mode of
-        Numeric      -> "0001"
-        Alphanumeric -> "0010"
-        Byte         -> "0100"
-        UTF8         -> "0100"
+        Numeric      -> 1
+        Alphanumeric -> 2
+        Byte         -> 4
+        UTF8         -> 4
 
 
 
 ---------------------------------------------------------------------
--- Numeric
----------------------------------------------------------------------
-
-
-numeric : String -> Result Error (List String)
-numeric str =
-    breakStr 3 str
-        |> listResult encodeNumeric []
-
-
-encodeNumeric : String -> Result Error String
-encodeNumeric str =
-    ParseInt.parseInt str
-        |> Result.map (ParseInt.toRadixUnsafe 2)
-        |> Result.map (numericToBinary str)
-        |> Result.mapError (always InvalidNumericChar)
-
-
-numericToBinary : String -> String -> String
-numericToBinary originalStr =
-    case String.length originalStr of
-        1 -> String.padLeft 4 '0'
-        2 -> String.padLeft 7 '0'
-        _ -> String.padLeft 10 '0'
-
-
-
----------------------------------------------------------------------
--- Alphanumeric
----------------------------------------------------------------------
-
-
-alphanumeric : String -> Result Error (List String)
-alphanumeric str =
-    breakStr 2 str
-        |> listResult alphanumericToBinary []
-
-
-alphanumericToBinary : String -> Result Error String
-alphanumericToBinary str =
-    case String.toList str of
-        firstChar :: secondChar :: [] ->
-            toAlphanumericCode firstChar
-                |> Result.andThen (\firstCode ->
-                        toAlphanumericCode secondChar
-                            |> Result.map ((,) firstCode))
-                |> Result.map (\(first, second) ->
-                        (first * 45) + second)
-                |> Result.map (ParseInt.toRadixUnsafe 2)
-                |> Result.map (String.padLeft 11 '0')
-
-
-        char :: [] ->
-            toAlphanumericCode char
-                |> Result.map (ParseInt.toRadixUnsafe 2)
-                |> Result.map (String.padLeft 6 '0')
-
-        _ ->
-            Result.Err InvalidAlphanumericChar
-
-
-toAlphanumericCode : Char -> Result Error Int
-toAlphanumericCode char =
-    Dict.get char alphanumericCode
-        |> Result.fromMaybe InvalidAlphanumericChar
-
-
-alphanumericCode : Dict Char Int
-alphanumericCode =
-    [ ( '0', 0 )
-    , ( '1', 1 )
-    , ( '2', 2 )
-    , ( '3', 3 )
-    , ( '4', 4 )
-    , ( '5', 5 )
-    , ( '6', 6 )
-    , ( '7', 7 )
-    , ( '8', 8 )
-    , ( '9', 9 )
-    , ( 'A', 10 )
-    , ( 'B', 11 )
-    , ( 'C', 12 )
-    , ( 'D', 13 )
-    , ( 'E', 14 )
-    , ( 'F', 15 )
-    , ( 'G', 16 )
-    , ( 'H', 17 )
-    , ( 'I', 18 )
-    , ( 'J', 19 )
-    , ( 'K', 20 )
-    , ( 'L', 21 )
-    , ( 'M', 22 )
-    , ( 'N', 23 )
-    , ( 'O', 24 )
-    , ( 'P', 25 )
-    , ( 'Q', 26 )
-    , ( 'R', 27 )
-    , ( 'S', 28 )
-    , ( 'T', 29 )
-    , ( 'U', 30 )
-    , ( 'V', 31 )
-    , ( 'W', 32 )
-    , ( 'X', 33 )
-    , ( 'Y', 34 )
-    , ( 'Z', 35 )
-    , ( ' ', 36 )
-    , ( '$', 37 )
-    , ( '%', 38 )
-    , ( '*', 39 )
-    , ( '+', 40 )
-    , ( '-', 41 )
-    , ( '.', 42 )
-    , ( '/', 43 )
-    , ( ':', 44 )
-    ] |> Dict.fromList
-
-
-
----------------------------------------------------------------------
--- Byte
----------------------------------------------------------------------
-
-
-byte : String -> List Int -> Result Error (List String)
-byte str list =
-    case String.uncons str of
-        Just ( char, strTail ) ->
-            Char.toCode char
-                |> flip (::) list
-                |> byte strTail
-
-        Nothing ->
-            List.reverse list
-                |> List.map (ParseInt.toRadixUnsafe 2)
-                |> List.map (String.padLeft 8 '0')
-                |> Result.Ok
-
-
-
----------------------------------------------------------------------
--- UTF-8
----------------------------------------------------------------------
-
-
-utf8 : String -> List Int -> Result Error (List String)
-utf8 str list =
-    case String.uncons str of
-        Just ( char, strTail ) ->
-            Char.toCode char
-                |> utf8ToByte list strTail
-
-        Nothing ->
-            List.reverse list
-                |> List.map (ParseInt.toRadixUnsafe 2)
-                |> List.map (String.padLeft 8 '0')
-                |> Result.Ok
-
-
--- http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
-
-utf8ToByte : List Int -> String -> Int -> Result Error (List String)
-utf8ToByte list remainStr charCode =
-    if charCode < 128 then
-        charCode :: list
-            |> utf8 remainStr
-
-    else if charCode < 2048 then
-        list
-            |> (::) (Bit.or 192 (shiftRightBy 6 charCode))
-            |> (::) (Bit.or 128 (and63 charCode))
-            |> utf8 remainStr
-
-    else if charCode < 55296 || charCode >= 57344 then
-        list
-            |> (::) (Bit.or 224 (shiftRightBy 12 charCode))
-            |> (::) (Bit.or 128 (and63 (shiftRightBy 6 charCode)))
-            |> (::) (Bit.or 128 (and63 charCode))
-            |> utf8 remainStr
-
-    else case String.uncons remainStr of
-        Just ( char, strTail ) ->
-            let
-                nextCharCode = Char.toCode char
-
-                charC =
-                    Bit.and 1023 charCode
-                        |> Bit.shiftLeftBy 10
-                        |> Bit.or (Bit.and 1023 nextCharCode)
-                        |> (+) 65536
-
-
-                byte1 = Bit.or 240 (shiftRightBy 18 charC)
-                byte2 = Bit.or 128 (and63 (shiftRightBy 12 charC))
-                byte3 = Bit.or 128 (and63 (shiftRightBy 6 charC))
-                byte4 = Bit.or 128 (and63 charC)
-
-
-            in
-                byte4 :: byte3 :: byte2 :: byte1 :: list
-                    |> utf8 strTail
-
-
-        Nothing ->
-            Result.Err InvalidUTF8Char
-
-
--- 63 == 0x3f
-and63 : Int -> Int
-and63 = Bit.and 63
-
-
-
-{--------------------------------------------------------------------
 -- Version selector
---------------------------------------------------------------------}
+---------------------------------------------------------------------
 
 
-selectVersion : String -> ECLevel -> Mode -> String -> Result Error ( String, Model )
+type alias Model =
+    { inputStr  : String
+    , ecLevel   : ECLevel
+    , mode      : Mode
+    , groupInfo : GroupInfo
+    , bitsCount : Int
+    }
+
+
+selectVersion : String -> ECLevel -> Mode -> List ( Int, Int ) -> Result Error ( List ( Int, Int ), Model )
 selectVersion inputStr ecLevel mode encodedStr =
-    4 + String.length encodedStr
-        |> getVersion ecLevel mode
-        |> Result.map (versionToModel inputStr ecLevel mode)
-        |> Result.map ((,) encodedStr)
+    let
+        partialBitsCount = 
+            List.foldl (\a b -> Tuple.second a + b) 0 encodedStr
+                |> (+) 4 -- Add mode indicator bits
+
+    in
+        partialBitsCount
+            |> getVersion ecLevel mode
+            |> Result.map (versionToModel inputStr ecLevel
+                mode partialBitsCount)
+            |> Result.map ((,) encodedStr)
 
 
-versionToModel : String -> ECLevel -> Mode -> GroupInfo -> Model
-versionToModel inputStr ecLevel mode groupInfo =
+versionToModel : String -> ECLevel -> Mode -> Int -> GroupInfo -> Model
+versionToModel inputStr ecLevel mode partialBitsCount groupInfo =
     { inputStr  = inputStr
     , ecLevel   = ecLevel
     , mode      = mode
     , groupInfo = groupInfo
+    , bitsCount = partialBitsCount
+        + charCountIndicatorLength mode groupInfo.version
     }
 
 
@@ -379,41 +141,37 @@ filterCapacity mode dataLength { version, capacity } =
 
 
 
-{--------------------------------------------------------------------
--- Add information and final bits:
-Mode indicator, char count indicator, terminator, padding and filler.
---------------------------------------------------------------------}
+---------------------------------------------------------------------
+-- Add information and trailing bits
+---------------------------------------------------------------------
 
 
-infoAndFinalBits : ( String, Model ) -> Result Error ( Model, List Int)
-infoAndFinalBits ( bitsStr, model ) =
-    bitsStr
-        |> (++) (charCountIndicator model bitsStr)
-        |> (++) (modeIndicator model.mode)
-        |> addTerminator model.groupInfo.capacity
-        |> toMultipleOf8
+addInfoAndFinalBits : ( List ( Int, Int ), Model ) -> ( Model, List Int)
+addInfoAndFinalBits ( bits, model ) =
+    bits
+        |> (::) (charCountIndicator model bits)
+        |> (::) ( modeIndicator model.mode, 4 )
+        |> addTerminator model.groupInfo.capacity model.bitsCount
+        |> bitsToBytes
         |> addFiller model.groupInfo.capacity
-        |> breakStr 8
-        |> listResult (ParseInt.parseIntRadix 2) []
-        |> Result.map ((,) model)
-        |> Result.mapError (always InvalidBinaryConversion)
+        |> (,) model
 
 
-charCountIndicator : Model -> String -> String
-charCountIndicator { groupInfo, inputStr, mode } bitsStr =
+charCountIndicator : Model -> List ( Int, Int ) -> ( Int, Int )
+charCountIndicator { groupInfo, inputStr, mode } bits =
     let
         charCount =
             if mode == UTF8
-                then String.length bitsStr // 8
+                then List.length bits
                 else String.length inputStr
 
         length =
             charCountIndicatorLength mode groupInfo.version
 
     in
-        charCount
-            |> ParseInt.toRadixUnsafe 2
-            |> String.padLeft length '0'
+        ( charCount
+        , length
+        )
 
 
 charCountIndicatorLength : Mode -> Int -> Int
@@ -440,55 +198,78 @@ charCountIndicatorLength mode version =
             UTF8         -> 16
 
 
-addTerminator : Int -> String -> String
-addTerminator totalLength bits =
-    totalLength - String.length bits
+addTerminator : Int -> Int -> List ( Int, Int ) -> List ( Int, Int )
+addTerminator capacity bitsCount bits =
+    capacity - bitsCount
         |> min 4
-        |> flip String.repeat "0"
+        |> (,) 0
+        |> flip (::) []
         |> (++) bits
 
 
-toMultipleOf8 : String -> String
-toMultipleOf8 bits =
-    let
-        remainer =
-            String.length bits % 8
+bitsToBytes : List ( Int, Int ) -> List Int
+bitsToBytes bits =
+    List.foldl bitsToBytesHelp ( ( 0, 0 ), [] ) bits
+        |> Tuple.second
+        |> List.reverse
 
-        repeatInt =
-            if remainer == 0
-                then 0
-                else 8 - remainer
+
+bitsToBytesHelp : ( Int, Int ) -> ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
+bitsToBytesHelp ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
+    let
+        lengthSum = curLength + remLength
+
+        bitsSum =
+            Bit.shiftLeftBy curLength remBits
+                |> Bit.or curBits
 
     in
-        String.repeat repeatInt "0"
-            |> (++) bits
+        if lengthSum >= 8 then
+            let
+                newRemLength = abs (lengthSum - 8)
+
+                newRemBits = 
+                    Bit.shiftLeftBy newRemLength 1
+                        |> flip (-) 1
+                        |> Bit.and bitsSum
+
+                newByte =
+                    Bit.shiftRightBy (lengthSum - 8) bitsSum
 
 
-addFiller : Int -> String -> String
-addFiller totalLength bits =
+            in
+                ( ( newRemBits, newRemLength)
+                , newByte :: bytes
+                )
+
+        else
+            ( ( bitsSum, lengthSum )
+            , bytes
+            )
+
+
+addFiller : Int -> List Int -> List Int
+addFiller capacity bytes =
     let
         fillerLength =
-            (totalLength - String.length bits) // 8
+            (capacity // 8) - List.length bytes
 
     in
-        firstFillerByte ++ secondFillerByte
-            |> String.repeat (fillerLength // 2)
+        [ firstFillerByte, secondFillerByte ]
+            |> List.repeat (fillerLength // 2)
+            |> List.concat
             |> (if fillerLength % 2 == 0
                     then identity
-                    else flip (++) firstFillerByte)
-            |> (++) bits
+                    else flip (++) [ firstFillerByte ])
+            |> (++) bytes
 
 
-firstFillerByte : String
-firstFillerByte =
-    ParseInt.toRadixUnsafe 2 236
-        |> String.padLeft 8 '0'
+firstFillerByte : Int
+firstFillerByte = 236
 
 
-secondFillerByte : String
-secondFillerByte =
-    ParseInt.toRadixUnsafe 2 17
-        |> String.padLeft 8 '0'
+secondFillerByte : Int
+secondFillerByte = 17
 
 
 
@@ -535,72 +316,38 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
 
 
 ---------------------------------------------------------------------
+-- Error Correction
+---------------------------------------------------------------------
+
+
+type ECLevel = L | M | Q | H
+
+
+ecLevelToInt : ECLevel -> Int
+ecLevelToInt ecLevel =
+    case ecLevel of
+        L -> 1
+        M -> 0
+        Q -> 3
+        H -> 2
+
+
+getErrorCorrection : ( Model, List (List Int) ) -> Result Error ( Model, List (List Int), List (List Int) )
+getErrorCorrection ( model, dataBlocks ) =
+    ErrorCorrection.get model.groupInfo.ecPerBlock dataBlocks
+        |> Result.map ((,,) model dataBlocks)
+
+
+
+---------------------------------------------------------------------
 -- Final formatation
 ---------------------------------------------------------------------
 
 
-finalFormat : ( Model, List (List Int), List (List Int) ) -> ( Model, List Int )
-finalFormat ( model, dataBlocks, ecBlocks ) =
+concatTranspose : ( Model, List (List Int), List (List Int) ) -> ( Model, List Int )
+concatTranspose ( model, dataBlocks, ecBlocks ) =
     transpose ecBlocks
         |> (++) (transpose dataBlocks)
         |> List.concat
         |> (,) model
 
-
-
----------------------------------------------------------------------
--- Helpers
----------------------------------------------------------------------
-
-
-listResult : ( a -> Result x b ) -> List b -> List a -> Result x (List b)
-listResult fun listb lista =
-    case lista of
-        head :: tail ->
-            fun head
-                |> Result.map (\r -> r :: listb)
-                |> Result.andThen (flip (listResult fun) tail)
-
-        [] ->
-            Result.Ok (List.reverse listb)
-
-
--- From elm-community/string-extra
-
-breakStr : Int -> String -> List String
-breakStr width string =
-    if width == 0 || string == ""
-        then [ string ]
-        else breaker width string []
-
-
-breaker : Int -> String -> List String -> List String
-breaker width string acc =
-    case string of
-        "" ->
-            List.reverse acc
-
-        _ ->
-            breaker width
-                (String.dropLeft width string)
-                ((String.slice 0 width string) :: acc)
-
-
-transpose : List (List a) -> List (List a)
-transpose ll =
-    case ll of
-        [] ->
-            []
-
-        [] :: xss ->
-            transpose xss
-
-        (x :: xs) :: xss ->
-            let
-                heads =
-                    List.filterMap List.head xss
-
-                tails =
-                    List.filterMap List.tail xss
-            in
-                (x :: heads) :: transpose (xs :: tails)
