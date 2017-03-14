@@ -54,8 +54,7 @@ main =
 view : Model -> Html Msg
 view { finalMessage } =
     div []
-        [ h1 [] [ text "Elm QR Code" ]
-        , form [ onSubmit Render ]
+        [ form [ onSubmit Render ]
             [ input [ onInput UpdateMessage ] []
             , button [ type_ "submit" ] [ text "Render" ]
             ]
