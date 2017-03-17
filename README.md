@@ -4,7 +4,7 @@ QR Code encoder and renderer. [Demo](https://pablohirafuji.github.io/elm-qrcode/
 
 ## Basic Usage
 
-```
+```elm
 import QRCode
 
 qrCode : Html msg
