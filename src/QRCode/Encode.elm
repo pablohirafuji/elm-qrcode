@@ -209,13 +209,28 @@ addTerminator capacity bitsCount bits =
 
 bitsToBytes : List ( Int, Int ) -> List Int
 bitsToBytes bits =
-    List.foldl bitsToBytesHelp ( ( 0, 0 ), [] ) bits
-        |> Tuple.second
-        |> List.reverse
+    bitsToBytes1 bits ( ( 0, 0 ), [] )
 
 
-bitsToBytesHelp : ( Int, Int ) -> ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
-bitsToBytesHelp ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
+bitsToBytes1 : List ( Int, Int ) -> ( ( Int, Int ), List Int ) -> List Int
+bitsToBytes1 bits ( ( remBits, remLength ), bytes ) =
+    case bits of
+        head :: tail ->
+            bitsToBytes2 head ( ( remBits, remLength ), bytes )
+                |> bitsToBytes1 tail
+
+        [] ->
+            if remLength == 0 then
+                List.reverse bytes
+
+            else
+                Bit.shiftLeftBy (8 - remLength) remBits
+                    |> flip (::) bytes
+                    |> List.reverse
+
+
+bitsToBytes2 : ( Int, Int ) -> ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
+bitsToBytes2 ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
     let
         lengthSum = curLength + remLength
 
@@ -224,28 +239,32 @@ bitsToBytesHelp ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
                 |> Bit.or curBits
 
     in
-        if lengthSum >= 8 then
-            let
-                newRemLength = abs (lengthSum - 8)
-
-                newRemBits = 
-                    Bit.shiftLeftBy newRemLength 1
-                        |> flip (-) 1
-                        |> Bit.and bitsSum
-
-                newByte =
-                    Bit.shiftRightBy (lengthSum - 8) bitsSum
+        bitsToBytes3 ( ( bitsSum, lengthSum ), bytes )
 
 
-            in
-                ( ( newRemBits, newRemLength)
-                , newByte :: bytes
-                )
+bitsToBytes3 : ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
+bitsToBytes3 ( ( bits, length ), bytes ) =
+    if length >= 8 then
+        let
+            remLength = length - 8
 
-        else
-            ( ( bitsSum, lengthSum )
-            , bytes
-            )
+            remBits = 
+                Bit.shiftLeftBy remLength 1
+                    |> flip (-) 1
+                    |> Bit.and bits
+
+            byte =
+                Bit.shiftRightBy remLength bits
+
+        in
+            ( ( remBits, remLength)
+            , byte :: bytes
+            ) |> bitsToBytes3
+
+    else
+        ( ( bits, length )
+        , bytes
+        )
 
 
 addFiller : Int -> List Int -> List Int
