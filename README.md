@@ -23,9 +23,13 @@ If you would like more functionalities, please open an issue on github.
 
 ## Changelog
 
-- *v1.0.2*
+- **1.1.0**
+    - Add `toSvgWithECLevel`;
+    - Expose `ECLevel`;
+    - Thanks again @joshmh!
+- **1.0.2**
     - Fix bit to byte [conversion bug](https://github.com/pablohirafuji/elm-qrcode/issues/1). Thanks @joshmh!
-- *v1.0.1*
+- **1.0.1**
 	- Refactored encoder to use bitwise operations instead of string manipulation;
 	- Refactored matrix to use bitwise operations instead of string manipulation;
 	- Dropped ParseInt dependence;

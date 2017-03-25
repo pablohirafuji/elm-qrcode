@@ -49,6 +49,24 @@ toSvg inputStr =
 
 {-| Transform a string with a given [EClevel](./QRCode-ECLevel#ECLevel)
 into a result [Error](./QRCode-Error#Error) or a QR Code svg element.
+
+
+```
+import QRCode exposing (toSvgWithECLevel)
+import QRCode.ECLevel as ECLevel
+
+qrCode : Html msg
+qrCode =
+    let
+        resultQRCode =
+            toSvgWithECLevel "Hello world" ECLevel.L
+
+    in
+        case resultQRCode of
+            Result.Ok view -> view
+            Result.Err err -> Html.text (toString err)
+```
+
 -}
 toSvgWithECLevel : String -> ECLevel -> Result Error (Html msg)
 toSvgWithECLevel inputStr ecLevel =
