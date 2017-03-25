@@ -1,5 +1,5 @@
 {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "summary": "QR Code encoder and renderer.",
     "repository": "https://github.com/pablohirafuji/elm-qrcode.git",
     "license": "BSD3",
