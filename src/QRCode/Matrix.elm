@@ -10,7 +10,8 @@ import Array exposing (Array)
 import Bitwise exposing (shiftLeftBy, shiftRightBy, shiftRightZfBy)
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (transpose)
-import QRCode.Encode as Encode exposing (ECLevel, ecLevelToInt)
+import QRCode.Encode as Encode
+import QRCode.ECLevel exposing (ECLevel(..))
 
 
 type alias Model =
@@ -192,6 +193,15 @@ encodeFormatInfo ecLevel mask =
 
     in
         helper d
+
+
+ecLevelToInt : ECLevel -> Int
+ecLevelToInt ecLevel =
+    case ecLevel of
+        L -> 1
+        M -> 0
+        Q -> 3
+        H -> 2
 
 
 

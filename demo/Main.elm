@@ -1,11 +1,14 @@
 module Main exposing (..)
 
+
 import Html exposing (..)
 import Html.Attributes exposing (type_)
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Lazy exposing (lazy)
 import QRCode
-import QRCode.Encode as Encode exposing (ECLevel)
+import QRCode.ECLevel exposing (ECLevel(..))
+import QRCode.VCard as VCard
+
 
 
 type alias Model =
@@ -64,7 +67,7 @@ view { finalMessage } =
 render : String -> Html msg
 render message =
     Html.div []
-        [ QRCode.toSvg2 message Encode.Q
+        [ QRCode.toSvgWithECLevel VCard.testCard Q
             |> \result ->
                 case result of
                     Result.Ok view ->

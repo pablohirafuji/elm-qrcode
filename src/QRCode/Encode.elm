@@ -1,11 +1,15 @@
-module QRCode.Encode exposing (..)
+module QRCode.Encode exposing
+    ( encode
+    , Model
+    )
 
 
 import Regex exposing (Regex)
 import Bitwise as Bit exposing (shiftLeftBy, shiftRightBy)
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (listResult, breakStr, transpose)
-import QRCode.GroupInfo as Group exposing (GroupInfo)
+import QRCode.ECLevel exposing (ECLevel)
+import QRCode.GroupInfo as Group exposing (GroupInfo, getGroupData)
 import QRCode.ErrorCorrection as ErrorCorrection
 import QRCode.Encode.Numeric as Numeric
 import QRCode.Encode.Alphanumeric as Alphanumeric
@@ -123,15 +127,6 @@ getVersion ecLevel mode dataLength =
         |> List.sortBy .capacity
         |> List.head
         |> Result.fromMaybe InputLengthOverflow
-
-
-getGroupData : ECLevel -> List GroupInfo
-getGroupData ecLevel =
-    case ecLevel of
-        L -> Group.dataL
-        M -> Group.dataM
-        Q -> Group.dataQ
-        H -> Group.dataH
 
 
 filterCapacity : Mode -> Int -> GroupInfo -> Bool
@@ -337,18 +332,6 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
 ---------------------------------------------------------------------
 -- Error Correction
 ---------------------------------------------------------------------
-
-
-type ECLevel = L | M | Q | H
-
-
-ecLevelToInt : ECLevel -> Int
-ecLevelToInt ecLevel =
-    case ecLevel of
-        L -> 1
-        M -> 0
-        Q -> 3
-        H -> 2
 
 
 getErrorCorrection : ( Model, List (List Int) ) -> Result Error ( Model, List (List Int), List (List Int) )

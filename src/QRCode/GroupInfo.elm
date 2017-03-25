@@ -1,11 +1,20 @@
 module QRCode.GroupInfo exposing
     ( GroupInfo
-    , dataL
-    , dataM
-    , dataQ
-    , dataH
+    , getGroupData
     )
 
+
+import QRCode.ECLevel exposing (ECLevel(..))
+
+
+
+getGroupData : ECLevel -> List GroupInfo
+getGroupData ecLevel =
+    case ecLevel of
+        L -> dataL
+        M -> dataM
+        Q -> dataQ
+        H -> dataH
 
 
 type alias GroupInfo =

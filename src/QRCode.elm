@@ -1,17 +1,19 @@
-module QRCode exposing (toSvg, toSvg2)
+module QRCode exposing (toSvg, toSvgWithECLevel)
 
 {-| QR Code encoder and renderer.
 
 # Rendering
-@docs toSvg, toSvg2
+@docs toSvg, toSvgWithECLevel
 
 -}
 
 import Html exposing (Html)
-import QRCode.Encode as Encode exposing (ECLevel)
+import QRCode.ECLevel exposing (ECLevel(..))
+import QRCode.Encode as Encode
 import QRCode.Matrix as Matrix exposing (Model)
 import QRCode.Error exposing (Error)
 import QRCode.View as View
+
 
 
 toMatrix : String -> ECLevel -> Result Error Model
@@ -20,7 +22,9 @@ toMatrix inputStr ecLevel =
         |> Result.andThen Matrix.apply
 
 
-{-| Transform a string into a result Error or svg element.
+{-| Transform a string into a result [Error](./QRCode-Error#Error)
+or a QR Code svg element using [`ECLevel.Q`](./QRCode-ECLevel#ECLevel)
+(25% of codewords can be restored).
 
 ```
 qrCode : Html msg
@@ -39,13 +43,15 @@ qrCode =
 -}
 toSvg : String -> Result Error (Html msg)
 toSvg inputStr =
-    toMatrix inputStr Encode.Q
+    toMatrix inputStr Q
         |> Result.map View.toSvg
 
 
-{-| Transform a string with given EC level into a result Error or svg element.
+{-| Transform a string with a given [EClevel](./QRCode-ECLevel#ECLevel)
+into a result [Error](./QRCode-Error#Error) or a QR Code svg element.
 -}
-toSvg2 : String -> ECLevel -> Result Error (Html msg)
-toSvg2 inputStr ecLevel =
+toSvgWithECLevel : String -> ECLevel -> Result Error (Html msg)
+toSvgWithECLevel inputStr ecLevel =
     toMatrix inputStr ecLevel
         |> Result.map View.toSvg
+
