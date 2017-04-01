@@ -72,6 +72,6 @@ utf8ToByte list remainStr charCode =
             Result.Err InvalidUTF8Char
 
 
--- 63 == 0x3f
+-- 63 == 0x3f == 111111
 and63 : Int -> Int
 and63 = Bit.and 63

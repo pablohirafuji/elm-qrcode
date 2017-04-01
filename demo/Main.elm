@@ -7,7 +7,6 @@ import Html.Events exposing (onClick, onInput, onSubmit)
 import Html.Lazy exposing (lazy)
 import QRCode
 import QRCode.ECLevel exposing (ECLevel(..))
-import QRCode.VCard as VCard
 
 
 
@@ -67,7 +66,7 @@ view { finalMessage } =
 render : String -> Html msg
 render message =
     Html.div []
-        [ QRCode.toSvgWithECLevel VCard.testCard Q
+        [ QRCode.toSvgWithECLevel message Q
             |> \result ->
                 case result of
                     Result.Ok view ->

@@ -4,7 +4,6 @@ module QRCode.Encode exposing
     )
 
 
-import Regex exposing (Regex)
 import Bitwise as Bit exposing (shiftLeftBy, shiftRightBy)
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (listResult, breakStr, transpose)
@@ -56,14 +55,14 @@ type Mode
 
 
 selectMode : String -> Mode
-selectMode inputStr =
-    if Regex.contains Numeric.regex inputStr then
+selectMode input =
+    if Numeric.isValid input then
         Numeric
 
-    else if Regex.contains Alphanumeric.regex inputStr then
+    else if Alphanumeric.isValid input then
         Alphanumeric
 
-    else if Regex.contains Byte.regex inputStr then
+    else if Byte.isValid input then
         Byte
 
     else

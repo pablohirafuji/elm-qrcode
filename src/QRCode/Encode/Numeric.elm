@@ -1,5 +1,5 @@
 module QRCode.Encode.Numeric exposing
-    ( regex
+    ( isValid
     , encode
     )
 
@@ -10,8 +10,13 @@ import QRCode.Helpers exposing (listResult, breakStr)
 
 
 
-regex : Regex
-regex =
+isValid : String -> Bool
+isValid input =
+    Regex.contains isValidRegex input
+
+
+isValidRegex : Regex
+isValidRegex =
     Regex.regex "^[0-9]+$"
 
 

@@ -1,5 +1,5 @@
 module QRCode.Encode.Byte exposing
-    ( regex
+    ( isValid
     , encode
     )
 
@@ -10,8 +10,13 @@ import QRCode.Error exposing (Error(..))
 
 
 
-regex : Regex
-regex =
+isValid : String -> Bool
+isValid input =
+    Regex.contains isValidRegex input
+
+
+isValidRegex : Regex
+isValidRegex =
     Regex.regex "^[\\u0000-\\u00ff]+$"
 
 
