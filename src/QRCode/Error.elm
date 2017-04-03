@@ -1,7 +1,6 @@
 module QRCode.Error exposing (Error(..))
 
-{-| # Error
-
+{-|
 @docs Error
 -}
 
@@ -9,14 +8,12 @@ module QRCode.Error exposing (Error(..))
 {-| Possible errors.
 -}
 
-
 type Error
     = AlignmentPatternNotFound
     | InvalidNumericChar
     | InvalidAlphanumericChar
     | InvalidUTF8Char
-    | InvalidBinaryConversion
     | LogTableException Int
-    | PolynomialMultiply
-    | PolynomialMod
+    | PolynomialMultiplyException
+    | PolynomialModException
     | InputLengthOverflow

@@ -1,7 +1,6 @@
 module QRCode.ECLevel exposing (ECLevel(..))
 
-{-| # ECLevel
-
+{-|
 @docs ECLevel
 -}
 

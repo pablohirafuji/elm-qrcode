@@ -1,21 +1,19 @@
 # QR Code
 
-QR Code encoder and renderer. [Demo](https://pablohirafuji.github.io/elm-qrcode/).
+QR Code encoding and rendering. [Demo](https://pablohirafuji.github.io/elm-qrcode/).
 
 ## Basic Usage
 
 ```elm
 import QRCode
 
-qrCode : Html msg
-qrCode =
-    let
-        resultQRCode = QRCode.toSvg "Hello world"
+qrCodeView : String -> Html msg
+qrCodeView message =
+    QRCode.encode message
+        |> Result.map QRCode.toSvg
+        |> Result.withDefault
+            (Html.text "Error while encoding to QRCode.")
 
-    in
-        case resultQRCode of
-            Result.Ok view -> view
-            Result.Err err -> Html.text (toString err)
 ```
 
 If you would like more functionalities, please open an issue on github.
@@ -23,6 +21,14 @@ If you would like more functionalities, please open an issue on github.
 
 ## Changelog
 
+- **2.0.0**:
+    - *TL;DR*: Separate encoding from rendering, add string rendering.
+    - Add `QRCode.encode`;
+    - Add `QRCode.encodeWithECLevel`;
+    - Add `QRCode.toString`;
+    - Change `QRCode.toSvg`;
+    - Change `QRCode.Error.Error`;
+    - Remove `QRCode.toSvgWithECLevel`;
 - **1.1.0**
     - Add `toSvgWithECLevel`;
     - Expose `ECLevel`;

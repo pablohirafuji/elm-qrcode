@@ -1,11 +1,13 @@
-module QRCode.View exposing (toSvg)
+module QRCode.View exposing
+    ( toSvg
+    , toString_
+    )
 
 
-import Array
 import Html exposing (Html)
 import Svg exposing (svg, rect)
 import Svg.Attributes exposing (width, height, viewBox, x, y, fill)
-import QRCode.Matrix exposing (Model, Module)
+import QRCode.Matrix as Matrix
 
 
 
@@ -13,18 +15,17 @@ moduleSize : Int
 moduleSize = 5
 
 
-toSvg : Model -> Html msg
-toSvg { size, matrix } =
+toSvg : Matrix.Model -> Html msg
+toSvg matrix =
     let
         quietZone = 8 * moduleSize
-        sizePx = toString (size * moduleSize + quietZone)
-
+        sizePx = toString (List.length matrix * moduleSize + quietZone)
 
     in matrix
-        |> Array.toList
-        |> List.indexedMap (moduleView size)
+        |> List.indexedMap (\rowIndex row ->
+            List.indexedMap (moduleView rowIndex) row)
+        |> List.concat
         |> List.filterMap identity
-        |> List.map rectView
         |> svg
             [ width sizePx
             , height sizePx
@@ -32,36 +33,33 @@ toSvg { size, matrix } =
             ]
 
 
-type alias ModuleView =
-    { row : Int
-    , col : Int
-    }
+
+moduleView : Int -> Int -> Bool -> Maybe (Html msg)
+moduleView rowIndex colIndex isDark =
+    if isDark then
+        -- Add 4 considering quiet zone
+        Just (rectView (rowIndex + 4) (colIndex + 4))
+
+    else
+        Nothing
 
 
-indexToModuleView : Int -> Int -> ModuleView
-indexToModuleView size index =
-    { row = (index // size) + 4 -- quiet zone
-    , col = (index % size) + 4 -- quiet zone
-    }
-
-
-moduleView : Int -> Int -> Maybe Module -> Maybe ModuleView
-moduleView size index maybeModule =
-    case maybeModule of
-        Just ( _, True ) ->
-            indexToModuleView size index
-                |> Just
-
-        _ ->
-            Nothing
-
-
-rectView : ModuleView -> Html msg
-rectView { row, col } =
+rectView : Int -> Int -> Html msg
+rectView row col =
     rect
-        [ x (toString (col * moduleSize))
-        , y (toString (row * moduleSize))
+        [ y (toString (row * moduleSize))
+        , x (toString (col * moduleSize))
         , width (toString moduleSize)
         , height (toString moduleSize)
         , fill "black"
         ] []
+
+
+
+toString_ : Matrix.Model -> String
+toString_ =
+    List.map
+        (List.map (\isDark -> if isDark then "■" else " ")
+            >> String.concat)
+        >> List.intersperse "\n"
+        >> String.concat

@@ -1,7 +1,5 @@
 module QRCode.Matrix exposing
     ( Model
-    , Matrix
-    , Module
     , apply
     )
 
@@ -14,10 +12,7 @@ import QRCode.Encode as Encode
 import QRCode.ECLevel exposing (ECLevel(..))
 
 
-type alias Model =
-    { size   : Int
-    , matrix : Matrix
-    }
+type alias Model = List (List Bool)
 
 
 type alias Matrix = Array (Maybe Module)
@@ -44,9 +39,9 @@ apply ( { ecLevel, groupInfo }, bytes )  =
             |> timingPattern size
             |> alignmentPattern version size
             |> Result.map (addData size bytes)
-            |> Result.map (getBestMask size)
-            |> Result.map (setFormatInfo ecLevel size)
-            |> Result.map (Model size)
+            |> Result.map (getBestMask ecLevel size)
+            --|> Result.map (setFormatInfo ecLevel size)
+            --|> Result.map (Model size)
 
 
 
@@ -102,8 +97,8 @@ reserveFormatInfo size matrix =
     setFormatInfo_ size (always True) 0 matrix
 
 
-setFormatInfo : ECLevel -> Int -> ( Mask, Matrix ) -> Matrix
-setFormatInfo ecLevel size ( mask, matrix ) =
+setFormatInfo : ECLevel -> Int -> Mask -> Matrix -> Matrix
+setFormatInfo ecLevel size mask matrix =
     let
         bits = encodeFormatInfo ecLevel mask
 
@@ -557,40 +552,32 @@ maskFunction mask =
             ((row * col) % 3 + (row + col) % 2) % 2 == 0
 
 
-getBestMask : Int -> Matrix -> ( Mask, Matrix )
-getBestMask size matrix =
+getBestMask : ECLevel -> Int -> Matrix -> Model
+getBestMask ecLevel size matrix =
     patternList
-        |> List.foldl (getBestMask_ size matrix) Nothing
-        |> Maybe.map (\( _, mask, matrix ) -> ( mask, matrix ))
-        |> Maybe.withDefault ( Pattern0, matrix )
+        |> List.foldl (getBestMask_ ecLevel size matrix) ( [], -1 )
+        |> Tuple.first
 
 
-getBestMask_ : Int -> Matrix -> Mask -> Maybe ( Int, Mask, Matrix ) -> Maybe ( Int, Mask, Matrix )
-getBestMask_ size matrix mask maybeMin =
+getBestMask_ : ECLevel -> Int -> Matrix -> Mask -> ( Model, Int ) -> ( Model, Int )
+getBestMask_ ecLevel size matrix mask ( minSMatrix, minScore ) =
     let
         maskedMatrix =
             applyMask size mask matrix
+                |> setFormatInfo ecLevel size mask
 
-        maskScore =
+        ( maskSMatrix, maskScore ) =
             getMaskScore size maskedMatrix
 
-        return =
-            case maybeMin of
-                Just ( minScore, minMask, minMatrix ) ->
-                    if minScore < maskScore then
-                        ( minScore, minMask, minMatrix )
-
-                    else
-                        ( maskScore, mask, maskedMatrix )
-
-                Nothing ->
-                    ( maskScore, mask, maskedMatrix )
-
     in
-        Just return
+        if minScore < maskScore && minScore /= -1 then
+            ( minSMatrix, minScore )
+
+        else
+            ( maskSMatrix, maskScore )
 
 
-getMaskScore : Int -> Matrix -> Int
+getMaskScore : Int -> Matrix -> ( Model, Int )
 getMaskScore size matrix =
     let
         list =
@@ -611,6 +598,7 @@ getMaskScore size matrix =
             |> (+) (rule3Score rowList)
             |> (+) (rule3Score transposedRowList)
             |> (+) (rule4Score size list)
+            |> (,) rowList
 
 
 breakList : Int -> List a -> List (List a) -> List (List a)
@@ -721,13 +709,30 @@ rule4Score size simplifiedList =
 
         moduleCount = toFloat (size * size)
 
-        ratio =
-            (toFloat (100 * darkCount) / moduleCount
-                / moduleCount - 50) / 5
-                    |> abs
+        darkPerc =
+            round (toFloat (100 * darkCount) / moduleCount)
+
+        remOf5 =
+            rem darkPerc 5
+
+        prevMult5 =
+            darkPerc - remOf5
+                |> flip (-) 50
+                |> abs
+                |> toFloat
+                |> flip (/) 5
+                |> round
+
+        nextMult5 =
+            darkPerc + (5 - remOf5)
+                |> flip (-) 50
+                |> abs
+                |> toFloat
+                |> flip (/) 5
+                |> round
 
     in
-        round (ratio * 10)
+        min prevMult5 nextMult5 * 10
 
 
 isDarkModule : Maybe Module -> Bool

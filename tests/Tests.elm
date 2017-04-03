@@ -85,4 +85,9 @@ all =
                     |> Result.map (Tuple.first >> .mode >> toString)
                     |> Expect.equal (Result.Ok "Numeric")
             ]
+        -- TODO
+        --, describe "Matrix"
+        --    [ test "Placement" <| \() ->
+        --        Expect.equal True True
+        --    ]
         ]

@@ -125,7 +125,7 @@ multiply poly1 poly2 =
         process__ indexSum num_ exp =
             Array.get indexSum num_
                 |> Maybe.map (Bitwise.xor exp)
-                |> Result.fromMaybe PolynomialMultiply
+                |> Result.fromMaybe PolynomialMultiplyException
 
     in
         valuesArray
@@ -144,7 +144,7 @@ mod poly1 poly2 =
         let
             getHead poly =
                 Array.get 0 poly
-                    |> Result.fromMaybe PolynomialMod
+                    |> Result.fromMaybe PolynomialModException
                     |> Result.andThen getLog
 
             ratio =
@@ -167,7 +167,7 @@ mod poly1 poly2 =
             helper_ index2 poly1_ exp =
                 Array.get index2 poly1_
                     |> Maybe.map (Bitwise.xor exp)
-                    |> Result.fromMaybe PolynomialMod
+                    |> Result.fromMaybe PolynomialModException
 
         in
             numResult
