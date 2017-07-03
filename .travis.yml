@@ -6,21 +6,23 @@ node_js: node
 cache:
   directories:
     - elm-stuff/packages
+    - tests/elm-stuff/packages
+    - demo/elm-stuff/packages
     - sysconfcpus
 
 os:
   - linux
 
-env: ELM_VERSION=0.18.0
+env:
+  global:
+    - ELM_VERSION="0.18.0"
+    - ELM_TEST_VERSION="0.18.7"
 
 before_install:
   - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
 install:
-  - node --version
-  - npm --version
-  - npm install -g elm@$ELM_VERSION elm-test@0.18.7
-  - travis_retry elm-package install --yes
+  - npm install -g elm@$ELM_VERSION elm-test@$ELM_TEST_VERSION
   # Faster compile on Travis.
   - |
     if [ ! -d sysconfcpus/bin ];
@@ -34,3 +36,6 @@ install:
 
 script:
   - $TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm-test
+
+after_success:
+  - ./demo/deploy-gh-pages.sh
