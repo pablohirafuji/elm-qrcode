@@ -4,7 +4,7 @@
     "repository": "https://github.com/pablohirafuji/elm-qrcode.git",
     "license": "BSD3",
     "source-directories": [
-        "..\\src",
+        "../src",
         "."
     ],
     "exposed-modules": [],
