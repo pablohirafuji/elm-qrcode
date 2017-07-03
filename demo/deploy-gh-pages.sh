@@ -33,7 +33,7 @@ rm -rf gh-pages/**/* || exit 0
 npm install uglify-js -g
 cd demo
 elm package install --yes
-elm make Main.elm --output ../gh-pages/main.js
+$TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm make Main.elm --output ../gh-pages/main.js
 cd ..
 uglifyjs gh-pages/main.js --output gh-pages/main.js
 cp demo/index.html gh-pages/index.html
