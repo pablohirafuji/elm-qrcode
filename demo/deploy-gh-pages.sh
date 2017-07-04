@@ -6,7 +6,7 @@ set -e # Exit with nonzero exit code if anything fails
 
 SOURCE_BRANCH="master"
 TARGET_BRANCH="gh-pages"
-ENCRYPTION_LABEL="6549de08457e"
+ENCRYPTION_LABEL="2e639d5f7f73"
 
 # Pull requests and commits to other branches doesn't deploy
 if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
@@ -37,7 +37,7 @@ $TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm make Main.elm --output ..
 cd ..
 uglifyjs gh-pages/main.js --output gh-pages/main.js
 cp demo/index.html gh-pages/index.html
-
+sed -i -e 's/\/_compile\/Main.elm/main.js/g' gh-pages/index.html
 
 # Now let's go have some fun with the cloned repo
 cd gh-pages
