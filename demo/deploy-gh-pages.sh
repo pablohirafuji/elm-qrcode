@@ -40,17 +40,17 @@ cd demo
 elm package install --yes
 $TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm make Main.elm --output ../$TEMP_FOLDER/main.js
 cd ..
-uglifyjs $TEMP_FOLDER/main.js --output $TEMP_FOLDER/main.js
 cp demo/index.html $TEMP_FOLDER/index.html
-sed -i -e 's/\/_compile\/Main.elm/main.js/g' $TEMP_FOLDER/index.html
+cd $TEMP_FOLDER
+uglifyjs main.js --output main.js
+sed -i -e 's/\/_compile\/Main.elm/main.js/g' index.html
 
 # Now let's go have some fun with the cloned repo
-cd $TEMP_FOLDER
 git config user.name "Travis CI"
 git config user.email "pablohirafuji@gmail.com"
 
 # If there are no changes to the compiled gh-pages (e.g. this is a README update) then just bail.
-if git diff --quiet; then
+if [ $(git status --porcelain | wc -l) -lt 1 ]; then
     echo "No changes to the output on this push; exiting deploy."
     exit 0
 fi
