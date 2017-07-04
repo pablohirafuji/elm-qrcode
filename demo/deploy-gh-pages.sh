@@ -75,6 +75,7 @@ ssh-add deploy_key
 git push $SSH_REPO $TARGET_BRANCH
 
 echo "Cleaning up temp files"
+cd ..
 rm -Rf $TEMP_FOLDER
 
 echo "Deployed successfully."

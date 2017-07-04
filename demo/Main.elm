@@ -1,35 +1,35 @@
 module Main exposing (..)
 
-
 import Json.Decode as Json
 import Html exposing (..)
 import Html.Attributes exposing (type_, selected, title)
 import Html.Events exposing (onInput, onSubmit, on, targetValue)
 import Html.Lazy exposing (lazy3)
-import QRCode
+import QRCode exposing (QRCode)
 import QRCode.ECLevel as ECLevel exposing (ECLevel)
-
+import QRCode.Error exposing (Error)
 
 
 type alias Model =
-    { message      : String
-    , ecLevel      : ECLevel
-    , renderer     : Renderer
+    { message : String
+    , ecLevel : ECLevel
+    , renderer : Renderer
     , finalMessage : String
     }
 
 
 initModel : Model
 initModel =
-    { message      = ""
-    , ecLevel      = ECLevel.Q
-    , renderer     = Svg
+    { message = ""
+    , ecLevel = ECLevel.Q
+    , renderer = Canvas
     , finalMessage = "Elm QR Code"
     }
 
 
 type Renderer
-    = Svg
+    = Canvas
+    | Svg
     | String_
 
 
@@ -82,12 +82,20 @@ view { ecLevel, renderer, finalMessage } =
             , select
                 [ title "Error Correction Level"
                 , targetValue
-                    |> Json.map (\str ->
+                    |> Json.map
+                        (\str ->
                             case str of
-                                "L" -> ECLevel.L
-                                "M" -> ECLevel.M
-                                "Q" -> ECLevel.Q
-                                _   -> ECLevel.H
+                                "L" ->
+                                    ECLevel.L
+
+                                "M" ->
+                                    ECLevel.M
+
+                                "Q" ->
+                                    ECLevel.Q
+
+                                _ ->
+                                    ECLevel.H
                         )
                     |> Json.map ChangeECLevel
                     |> on "change"
@@ -108,15 +116,22 @@ view { ecLevel, renderer, finalMessage } =
             , select
                 [ title "Renderer"
                 , targetValue
-                    |> Json.map (\str ->
-                            if str == "SVG"
-                                then Svg
-                                else String_
+                    |> Json.map
+                        (\str ->
+                            if str == "Canvas" then
+                                Canvas
+                            else if str == "SVG" then
+                                Svg
+                            else
+                                String_
                         )
                     |> Json.map ChangeRenderer
                     |> on "change"
                 ]
                 [ option
+                    [ selected (renderer == Canvas) ]
+                    [ text "Canvas" ]
+                , option
                     [ selected (renderer == Svg) ]
                     [ text "SVG" ]
                 , option
@@ -130,29 +145,24 @@ view { ecLevel, renderer, finalMessage } =
 
 
 qrCodeView : String -> ECLevel -> Renderer -> Html msg
-qrCodeView message ecLevel renderer  =
+qrCodeView message ecLevel renderer =
+    QRCode.encodeWithECLevel message ecLevel
+        |> qrCodeRender renderer
+        |> Result.withDefault
+            (Html.text "Error while encoding to QR Code.")
+
+
+qrCodeRender : Renderer -> Result Error QRCode -> Result Error (Html msg)
+qrCodeRender renderer =
     case renderer of
+        Canvas ->
+            Result.map QRCode.toCanvas
+
         Svg ->
-            qrCodeSvgView message ecLevel
+            Result.map QRCode.toSvg
 
         String_ ->
-            qrCodeStrView message ecLevel
-
-
-qrCodeSvgView : String -> ECLevel -> Html msg
-qrCodeSvgView message =
-    QRCode.encodeWithECLevel message
-        >> Result.map QRCode.toSvg
-        >> Result.withDefault
-            (Html.text "Error while encoding to QR Code.")
-
-
-qrCodeStrView : String -> ECLevel -> Html msg
-qrCodeStrView message =
-    QRCode.encodeWithECLevel message
-        >> Result.map (QRCode.toString >> toHtml)
-        >> Result.withDefault
-            (Html.text "Error while encoding to QR Code.")
+            Result.map (QRCode.toString >> toHtml)
 
 
 toHtml : String -> Html msg
@@ -167,4 +177,3 @@ toHtml qrCodeStr =
             ]
         ]
         [ Html.code [] [ Html.text qrCodeStr ] ]
-
