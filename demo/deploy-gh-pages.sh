@@ -6,11 +6,12 @@ set -e # Exit with nonzero exit code if anything fails
 
 SOURCE_BRANCH="master"
 TARGET_BRANCH="gh-pages"
+TEMP_FOLDER="temp"
 ENCRYPTION_LABEL="2e639d5f7f73"
 
 # Pull requests and commits to other branches doesn't deploy
 if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
-    echo "Skipping deploy to gh-pages."
+    echo "Skipping deploy to gh-pages"
     exit 0
 fi
 
@@ -19,28 +20,32 @@ REPO=`git config remote.origin.url`
 SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 SHA=`git rev-parse --verify HEAD`
 
-# Clone the existing gh-pages for this repo into gh-pages/
+# Clone the existing gh-pages for this repo into TEMP_FOLDER
 # Create a new empty branch if gh-pages doesn't exist yet (should only happen on first deploy)
-git clone $REPO gh-pages
-cd gh-pages
+echo "Starting deployment"
+echo "Target: ${TARGET_BRANCH} branch"
+git clone $REPO $TEMP_FOLDER
+cd $TEMP_FOLDER
 git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
-cd ..
 
 # Clean gh-pages existing contents
-rm -rf gh-pages/**/* || exit 0
+echo "Removing old static content"
+git rm -rf . || exit 1
+cd ..
 
 # Run our compile script
+echo "Compiling into ${TEMP_FOLDER}/"
 npm install uglify-js -g
 cd demo
 elm package install --yes
-$TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm make Main.elm --output ../gh-pages/main.js
+$TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm make Main.elm --output ../$TEMP_FOLDER/main.js
 cd ..
-uglifyjs gh-pages/main.js --output gh-pages/main.js
-cp demo/index.html gh-pages/index.html
-sed -i -e 's/\/_compile\/Main.elm/main.js/g' gh-pages/index.html
+uglifyjs $TEMP_FOLDER/main.js --output $TEMP_FOLDER/main.js
+cp demo/index.html $TEMP_FOLDER/index.html
+sed -i -e 's/\/_compile\/Main.elm/main.js/g' $TEMP_FOLDER/index.html
 
 # Now let's go have some fun with the cloned repo
-cd gh-pages
+cd $TEMP_FOLDER
 git config user.name "Travis CI"
 git config user.email "pablohirafuji@gmail.com"
 
@@ -68,3 +73,9 @@ ssh-add deploy_key
 
 # Now that we're all set up, we can push.
 git push $SSH_REPO $TARGET_BRANCH
+
+echo "Cleaning up temp files"
+rm -Rf $TEMP_FOLDER
+
+echo "Deployed successfully."
+exit 0
