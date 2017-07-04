@@ -21,6 +21,8 @@ If you would like more functionalities, please open an issue on github.
 
 ## Changelog
 
+- **2.1.0**:
+    - Add `QRCode.toCanvas`
 - **2.0.0**:
     - *TL;DR*: Separate encoding from rendering, add string rendering.
     - Add `QRCode.encode`;
