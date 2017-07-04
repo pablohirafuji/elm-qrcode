@@ -9,10 +9,12 @@ TARGET_BRANCH="gh-pages"
 TEMP_FOLDER="temp"
 ENCRYPTION_LABEL="2e639d5f7f73"
 
-# Pull requests and commits to other branches doesn't deploy
-if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
-    echo "Skipping deploy to gh-pages"
-    exit 0
+# Only deploy on new tags
+if [ "$TRAVIS_TAG" = "" ]; then
+   echo "Not a tag, not deploying"
+   exit 0
+else
+   echo "==> Building and deploying tag $TRAVIS_TAG <=="
 fi
 
 # Save some useful information
