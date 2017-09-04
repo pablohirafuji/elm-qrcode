@@ -6,6 +6,7 @@ module QRCode
         , toSvg
         , toString
         , toCanvas
+        , toBoolList
         )
 
 {-| QR Code encoding and rendering.
@@ -20,7 +21,7 @@ module QRCode
 
 # Rendering
 
-@docs toCanvas, toSvg, toString
+@docs toCanvas, toSvg, toString, toBoolList
 
 -}
 
@@ -127,3 +128,10 @@ Returns:
 toString : QRCode -> String
 toString (QRCode qrCode) =
     String_.view qrCode
+
+
+{-| Transform a QRCode into a list of list of bools. The list of bools are the rows. `True` represents a dark module. `False` a light one.
+-}
+toBoolList : QRCode -> List (List Bool)
+toBoolList (QRCode qrCode) =
+    qrCode
