@@ -26,7 +26,7 @@ before_install:
   - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
 install:
-  - npm install elm@$ELM_VERSION elm-test@$ELM_TEST_VERSION
+  - npm install elm@$ELM_VERSION elm-test@$ELM_TEST_VERSION uglify-js
   # Faster compile on Travis.
   - |
     if [ ! -d sysconfcpus/bin ];

@@ -25,7 +25,6 @@ echo "Target: ${TARGET_BRANCH} branch"
 
 # Run our compile script
 echo "Compiling into ${TEMP_FOLDER}/"
-npm install uglify-js
 cd demo
 $SYSCONFCPUS $ELM_MAKE Main.elm --output $TEMP_FOLDER/elm.js --yes
 sed -i -e 's/\/_compile\/Main.elm/elm.js/g' index.html
@@ -33,7 +32,7 @@ cp index.html $TEMP_FOLDER/index.html
 $UGLIFYJS $TEMP_FOLDER/elm.js --output $TEMP_FOLDER/elm.js
 
 cd $TRAVIS_BUILD_DIR
-git checkout $TARGET_BRANCH
+git checkout -b $TARGET_BRANCH
 cp $TEMP_FOLDER/* $TRAVIS_BUILD_DIR
 
 # Git commands
@@ -54,7 +53,7 @@ eval `ssh-agent -s`
 ssh-add deploy-key
 
 # Now that we're all set up, we can push.
-git push $SSH_REPO $TARGET_BRANCH
+git push -f $SSH_REPO $TARGET_BRANCH
 
 echo "Deployed successfully."
 exit 0
