@@ -1,3 +1,6 @@
+notifications:
+  email: false
+
 sudo: false
 
 language: node_js
@@ -5,9 +8,9 @@ node_js: node
 
 cache:
   directories:
-    - elm-stuff/build-artifacts
-    - tests/elm-stuff/build-artifacts
-    - demo/elm-stuff/build-artifacts
+    - elm-stuff
+    - tests/elm-stuff
+    - demo/elm-stuff
     - node_modules
     - sysconfcpus
 
@@ -22,11 +25,13 @@ env:
     - ELM_MAKE="${TRAVIS_BUILD_DIR}/node_modules/.bin/elm-make"
     - ELM_TEST="node ${TRAVIS_BUILD_DIR}/node_modules/elm-test/bin/elm-test --compiler ${TRAVIS_BUILD_DIR}/node_modules/.bin/elm-make"
 
-before_install:
-  - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-
 install:
-  - npm install elm@$ELM_VERSION elm-test@$ELM_TEST_VERSION uglify-js
+  - |
+    [ $(node -p "require('elm/package.json').version") == $ELM_VERSION ] || npm install elm@$ELM_VERSION
+  - |
+    [ $(node -p "require('elm-test/package.json').version") == $ELM_TEST_VERSION ] || npm install elm-test@$ELM_TEST_VERSION
+  - |
+    [ $(node -p "require('uglify-js/package.json').version") ] || npm install uglify-js
   # Faster compile on Travis.
   - |
     if [ ! -d sysconfcpus/bin ];
@@ -40,6 +45,8 @@ install:
 
 script:
   - $SYSCONFCPUS $ELM_TEST
+  - $SYSCONFCPUS $ELM_MAKE demo/Main.elm --output demo/elm.js --yes
 
 after_success:
-  - bash ./demo/deploy.sh
+  - test $TRAVIS_PULL_REQUEST = false \
+    && bash ./demo/deploy.sh

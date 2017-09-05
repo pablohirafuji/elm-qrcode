@@ -26,10 +26,9 @@ echo "Target: ${TARGET_BRANCH} branch"
 # Run our compile script
 echo "Compiling into ${TEMP_FOLDER}/"
 cd demo
-$SYSCONFCPUS $ELM_MAKE Main.elm --output $TEMP_FOLDER/elm.js --yes
 sed -i -e 's/\/_compile\/Main.elm/elm.js/g' index.html
 cp index.html $TEMP_FOLDER/index.html
-$UGLIFYJS $TEMP_FOLDER/elm.js --output $TEMP_FOLDER/elm.js
+$UGLIFYJS elm.js --output $TEMP_FOLDER/elm.js
 
 cd $TRAVIS_BUILD_DIR
 git checkout -b $TARGET_BRANCH
