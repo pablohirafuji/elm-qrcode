@@ -27,7 +27,7 @@ echo "Target: ${TARGET_BRANCH} branch"
 echo "Compiling into ${TEMP_FOLDER}/"
 npm install uglify-js
 cd demo
-$SYSCONFCPUS $ELM make Main.elm --output $TEMP_FOLDER/elm.js --yes
+$SYSCONFCPUS $ELM_MAKE Main.elm --output $TEMP_FOLDER/elm.js --yes
 sed -i -e 's/\/_compile\/Main.elm/elm.js/g' index.html
 cp index.html $TEMP_FOLDER/index.html
 $UGLIFYJS $TEMP_FOLDER/elm.js --output $TEMP_FOLDER/elm.js
@@ -47,7 +47,7 @@ ENCRYPTED_KEY_VAR="encrypted_${ENCRYPTION_LABEL}_key"
 ENCRYPTED_IV_VAR="encrypted_${ENCRYPTION_LABEL}_iv"
 ENCRYPTED_KEY=${!ENCRYPTED_KEY_VAR}
 ENCRYPTED_IV=${!ENCRYPTED_IV_VAR}
-openssl aes-256-cbc -K $ENCRYPTED_KEY -iv $ENCRYPTED_IV -in ../demo/deploy-key.enc -out deploy-key -d
+openssl aes-256-cbc -K $ENCRYPTED_KEY -iv $ENCRYPTED_IV -in demo/deploy-key.enc -out deploy-key -d
 
 chmod 600 deploy-key
 eval `ssh-agent -s`
