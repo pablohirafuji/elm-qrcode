@@ -15,24 +15,17 @@ REPO=`git config remote.origin.url`
 SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 SHA=`git rev-parse --verify HEAD`
 
-# Clone the existing gh-pages for this repo into TEMP_FOLDER
-# Create a new empty branch if gh-pages doesn't exist yet (should only happen on first deploy)
 echo "Building and deploying demo"
 echo "Target: ${TARGET_BRANCH} branch"
-# git clone $REPO $TEMP_FOLDER
-# cd $TEMP_FOLDER
-# git checkout $TARGET_BRANCH || git checkout --orphan $TARGET_BRANCH
 
 # Run our compile script
-echo "Compiling into ${TEMP_FOLDER}/"
-cd demo
+cd $TRAVIS_BUILD_DIR/demo
 sed -i -e 's/\/_compile\/Main.elm/elm.js/g' index.html
-cp index.html $TEMP_FOLDER/index.html
-$UGLIFYJS elm.js --output $TEMP_FOLDER/elm.js
+cp index.html $TRAVIS_BUILD_DIR/index.html
+$UGLIFYJS elm.js --output $TRAVIS_BUILD_DIR/elm.js
 
 cd $TRAVIS_BUILD_DIR
 git checkout -b $TARGET_BRANCH
-cp $TEMP_FOLDER/* $TRAVIS_BUILD_DIR
 
 # Git commands
 git config user.name "Travis CI"
