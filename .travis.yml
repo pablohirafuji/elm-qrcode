@@ -48,5 +48,8 @@ script:
   - $SYSCONFCPUS $ELM_MAKE demo/Main.elm --output demo/elm.js --yes
 
 after_success:
-  - test $TRAVIS_PULL_REQUEST = false \
-    && bash ./demo/deploy.sh
+  - |
+    if [ $TRAVIS_PULL_REQUEST == false ];
+    then
+      bash ./demo/deploy.sh
+    fi
