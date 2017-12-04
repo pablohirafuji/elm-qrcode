@@ -5,9 +5,41 @@ import Html exposing (..)
 import Html.Attributes exposing (type_, selected, title)
 import Html.Events exposing (onInput, onSubmit, on, targetValue)
 import Html.Lazy exposing (lazy3)
+import Navigation
 import QRCode exposing (QRCode)
 import QRCode.ECLevel as ECLevel exposing (ECLevel)
 import QRCode.Error exposing (Error)
+
+
+main : Program Never Model Msg
+main =
+    Navigation.program UrlChange
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+init : Navigation.Location -> ( Model, Cmd Msg )
+init location =
+    let
+        initStr =
+            String.dropLeft 1 location.hash
+    in
+        ( if String.isEmpty initStr then
+            initModel
+          else
+            { initModel
+                | message = initStr
+                , finalMessage = initStr
+            }
+        , Cmd.none
+        )
+
+
+
+-- MODEL
 
 
 type alias Model =
@@ -33,8 +65,13 @@ type Renderer
     | String_
 
 
+
+-- UPDATE
+
+
 type Msg
-    = UpdateMessage String
+    = UrlChange Navigation.Location
+    | UpdateMessage String
     | ChangeRenderer Renderer
     | ChangeECLevel ECLevel
     | Render
@@ -43,6 +80,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        UrlChange _ ->
+            ( model
+            , Cmd.none
+            )
+
         UpdateMessage message ->
             ( { model | message = message }
             , Cmd.none
@@ -64,21 +106,19 @@ update msg model =
             )
 
 
-main : Program Never Model Msg
-main =
-    Html.program
-        { view = view
-        , update = update
-        , subscriptions = \_ -> Sub.none
-        , init = ( initModel, Cmd.none )
-        }
+
+-- VIEW
 
 
 view : Model -> Html Msg
 view { ecLevel, renderer, finalMessage } =
     div []
         [ form [ onSubmit Render ]
-            [ input [ onInput UpdateMessage ] []
+            [ input
+                [ onInput UpdateMessage
+                , Html.Attributes.defaultValue finalMessage
+                ]
+                []
             , select
                 [ title "Error Correction Level"
                 , targetValue
