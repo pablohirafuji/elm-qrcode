@@ -8,6 +8,9 @@ node_js: node
 
 cache:
   directories:
+    - elm-stuff
+    - tests/elm-stuff
+    - demo/elm-stuff
     - node_modules
     - sysconfcpus
 
@@ -42,7 +45,9 @@ install:
 
 script:
   - $SYSCONFCPUS $ELM_TEST
+  - cd demo
   - $SYSCONFCPUS $ELM_MAKE demo/Main.elm --output demo/elm.js --yes
+  - cd ..
 
 after_success:
   - |
