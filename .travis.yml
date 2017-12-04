@@ -46,7 +46,7 @@ install:
 script:
   - $SYSCONFCPUS $ELM_TEST
   - cd demo
-  - $SYSCONFCPUS $ELM_MAKE demo/Main.elm --output demo/elm.js --yes
+  - $SYSCONFCPUS $ELM_MAKE Main.elm --output elm.js --yes
   - cd ..
 
 after_success:
