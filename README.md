@@ -16,6 +16,8 @@ qrCodeView message =
 
 ```
 
+Waiting for an elm `Canvas` package in 0.19 to add this render possibility.
+
 If you would like more functionalities, please open an issue on [GitHub](https://github.com/pablohirafuji/elm-qrcode/issues).
 
 [Changelog](https://github.com/pablohirafuji/elm-qrcode/releases).
@@ -26,5 +28,3 @@ If you would like more functionalities, please open an issue on [GitHub](https:/
 Thank you Carolyn Eby, for creating [this great tutorial](http://www.thonky.com/qr-code-tutorial/) on how QR Code works.
 
 Thank you Evan for bringing joy to the frontend.
-
-Donation: BTC [1HAyTwtxMEkJaHdUYMXVvoXp2PHgwFx2M9](https://pablohirafuji.github.io/elm-qrcode/#bitcoin:1HAyTwtxMEkJaHdUYMXVvoXp2PHgwFx2M9)

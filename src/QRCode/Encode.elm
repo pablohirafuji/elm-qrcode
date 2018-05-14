@@ -1,44 +1,50 @@
-module QRCode.Encode exposing
-    ( encode
-    , Model
-    )
-
+module QRCode.Encode
+    exposing
+        ( Model
+        , encode
+        )
 
 import Bitwise as Bit exposing (shiftLeftBy, shiftRightBy)
-import QRCode.Error exposing (Error(..))
-import QRCode.Helpers exposing (listResult, breakStr, transpose)
 import QRCode.ECLevel exposing (ECLevel)
-import QRCode.GroupInfo as Group exposing (GroupInfo, getGroupData)
-import QRCode.ErrorCorrection as ErrorCorrection
-import QRCode.Encode.Numeric as Numeric
 import QRCode.Encode.Alphanumeric as Alphanumeric
 import QRCode.Encode.Byte as Byte
+import QRCode.Encode.Numeric as Numeric
 import QRCode.Encode.UTF8 as UTF8
-
+import QRCode.Error exposing (Error(..))
+import QRCode.ErrorCorrection as ErrorCorrection
+import QRCode.GroupInfo as Group exposing (GroupInfo, getGroupData)
+import QRCode.Helpers exposing (breakStr, listResult, transpose)
 
 
 encode : String -> ECLevel -> Result Error ( Model, List Int )
 encode inputStr ecLevel =
     let
-        mode = selectMode inputStr
-
+        mode =
+            selectMode inputStr
     in
-        inputStr
-            |> encoder mode
-            |> Result.andThen (selectVersion inputStr ecLevel mode)
-            |> Result.map addInfoAndFinalBits
-            |> Result.andThen toBlocks
-            |> Result.andThen getErrorCorrection
-            |> Result.map concatTranspose
+    inputStr
+        |> encoder mode
+        |> Result.andThen (selectVersion inputStr ecLevel mode)
+        |> Result.map addInfoAndFinalBits
+        |> Result.andThen toBlocks
+        |> Result.andThen getErrorCorrection
+        |> Result.map concatTranspose
 
 
-encoder : Mode -> ( String -> Result Error (List ( Int, Int )) )
+encoder : Mode -> (String -> Result Error (List ( Int, Int )))
 encoder mode =
     case mode of
-        Numeric      -> Numeric.encode
-        Alphanumeric -> Alphanumeric.encode
-        Byte         -> Byte.encode
-        UTF8         -> UTF8.encode
+        Numeric ->
+            Numeric.encode
+
+        Alphanumeric ->
+            Alphanumeric.encode
+
+        Byte ->
+            Byte.encode
+
+        UTF8 ->
+            UTF8.encode
 
 
 
@@ -72,10 +78,17 @@ selectMode input =
 modeIndicator : Mode -> Int
 modeIndicator mode =
     case mode of
-        Numeric      -> 1
-        Alphanumeric -> 2
-        Byte         -> 4
-        UTF8         -> 4
+        Numeric ->
+            1
+
+        Alphanumeric ->
+            2
+
+        Byte ->
+            4
+
+        UTF8 ->
+            4
 
 
 
@@ -85,9 +98,9 @@ modeIndicator mode =
 
 
 type alias Model =
-    { inputStr  : String
-    , ecLevel   : ECLevel
-    , mode      : Mode
+    { inputStr : String
+    , ecLevel : ECLevel
+    , mode : Mode
     , groupInfo : GroupInfo
     , bitsCount : Int
     }
@@ -96,26 +109,32 @@ type alias Model =
 selectVersion : String -> ECLevel -> Mode -> List ( Int, Int ) -> Result Error ( List ( Int, Int ), Model )
 selectVersion inputStr ecLevel mode encodedStr =
     let
-        partialBitsCount = 
+        partialBitsCount =
             List.foldl (\a b -> Tuple.second a + b) 0 encodedStr
-                |> (+) 4 -- Add mode indicator bits
+                |> (+) 4
 
+        -- Add mode indicator bits
     in
-        partialBitsCount
-            |> getVersion ecLevel mode
-            |> Result.map (versionToModel inputStr ecLevel
-                mode partialBitsCount)
-            |> Result.map ((,) encodedStr)
+    partialBitsCount
+        |> getVersion ecLevel mode
+        |> Result.map
+            (versionToModel inputStr
+                ecLevel
+                mode
+                partialBitsCount
+            )
+        |> Result.map (\b -> ( encodedStr, b ))
 
 
 versionToModel : String -> ECLevel -> Mode -> Int -> GroupInfo -> Model
 versionToModel inputStr ecLevel mode partialBitsCount groupInfo =
-    { inputStr  = inputStr
-    , ecLevel   = ecLevel
-    , mode      = mode
+    { inputStr = inputStr
+    , ecLevel = ecLevel
+    , mode = mode
     , groupInfo = groupInfo
-    , bitsCount = partialBitsCount
-        + charCountIndicatorLength mode groupInfo.version
+    , bitsCount =
+        partialBitsCount
+            + charCountIndicatorLength mode groupInfo.version
     }
 
 
@@ -130,8 +149,9 @@ getVersion ecLevel mode dataLength =
 
 filterCapacity : Mode -> Int -> GroupInfo -> Bool
 filterCapacity mode dataLength { version, capacity } =
-    charCountIndicatorLength mode version + dataLength
-        |> \length -> length <= capacity
+    charCountIndicatorLength mode version
+        + dataLength
+        |> (\length -> length <= capacity)
 
 
 
@@ -140,7 +160,7 @@ filterCapacity mode dataLength { version, capacity } =
 ---------------------------------------------------------------------
 
 
-addInfoAndFinalBits : ( List ( Int, Int ), Model ) -> ( Model, List Int)
+addInfoAndFinalBits : ( List ( Int, Int ), Model ) -> ( Model, List Int )
 addInfoAndFinalBits ( bits, model ) =
     bits
         |> (::) (charCountIndicator model bits)
@@ -148,56 +168,79 @@ addInfoAndFinalBits ( bits, model ) =
         |> addTerminator model.groupInfo.capacity model.bitsCount
         |> bitsToBytes
         |> addFiller model.groupInfo.capacity
-        |> (,) model
+        |> (\b -> ( model, b ))
 
 
 charCountIndicator : Model -> List ( Int, Int ) -> ( Int, Int )
 charCountIndicator { groupInfo, inputStr, mode } bits =
     let
         charCount =
-            if mode == UTF8
-                then List.length bits
-                else String.length inputStr
+            if mode == UTF8 then
+                List.length bits
+
+            else
+                String.length inputStr
 
         length =
             charCountIndicatorLength mode groupInfo.version
-
     in
-        ( charCount
-        , length
-        )
+    ( charCount
+    , length
+    )
 
 
 charCountIndicatorLength : Mode -> Int -> Int
 charCountIndicatorLength mode version =
     if version <= 9 then
         case mode of
-            Numeric      -> 10
-            Alphanumeric -> 9
-            Byte         -> 8
-            UTF8         -> 8
+            Numeric ->
+                10
+
+            Alphanumeric ->
+                9
+
+            Byte ->
+                8
+
+            UTF8 ->
+                8
 
     else if version <= 26 then
         case mode of
-            Numeric      -> 12
-            Alphanumeric -> 11
-            Byte         -> 16
-            UTF8         -> 16
+            Numeric ->
+                12
+
+            Alphanumeric ->
+                11
+
+            Byte ->
+                16
+
+            UTF8 ->
+                16
 
     else
         case mode of
-            Numeric      -> 14
-            Alphanumeric -> 13
-            Byte         -> 16
-            UTF8         -> 16
+            Numeric ->
+                14
+
+            Alphanumeric ->
+                13
+
+            Byte ->
+                16
+
+            UTF8 ->
+                16
 
 
 addTerminator : Int -> Int -> List ( Int, Int ) -> List ( Int, Int )
 addTerminator capacity bitsCount bits =
-    capacity - bitsCount
+    capacity
+        - bitsCount
         |> min 4
-        |> (,) 0
-        |> flip (::) []
+        |> (\b -> ( 0, b ))
+        |> (\a -> (::) a [])
         |> (++) bits
 
 
@@ -219,41 +262,42 @@ bitsToBytes1 bits ( ( remBits, remLength ), bytes ) =
 
             else
                 Bit.shiftLeftBy (8 - remLength) remBits
-                    |> flip (::) bytes
+                    |> (\a -> (::) a bytes)
                     |> List.reverse
 
 
 bitsToBytes2 : ( Int, Int ) -> ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
 bitsToBytes2 ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
     let
-        lengthSum = curLength + remLength
+        lengthSum =
+            curLength + remLength
 
         bitsSum =
             Bit.shiftLeftBy curLength remBits
                 |> Bit.or curBits
-
     in
-        bitsToBytes3 ( ( bitsSum, lengthSum ), bytes )
+    bitsToBytes3 ( ( bitsSum, lengthSum ), bytes )
 
 
 bitsToBytes3 : ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
 bitsToBytes3 ( ( bits, length ), bytes ) =
     if length >= 8 then
         let
-            remLength = length - 8
+            remLength =
+                length - 8
 
-            remBits = 
+            remBits =
                 Bit.shiftLeftBy remLength 1
-                    |> flip (-) 1
+                    |> (\a -> (-) a 1)
                     |> Bit.and bits
 
             byte =
                 Bit.shiftRightBy remLength bits
-
         in
-            ( ( remBits, remLength)
-            , byte :: bytes
-            ) |> bitsToBytes3
+        ( ( remBits, remLength )
+        , byte :: bytes
+        )
+            |> bitsToBytes3
 
     else
         ( ( bits, length )
@@ -266,23 +310,27 @@ addFiller capacity bytes =
     let
         fillerLength =
             (capacity // 8) - List.length bytes
-
     in
-        [ firstFillerByte, secondFillerByte ]
-            |> List.repeat (fillerLength // 2)
-            |> List.concat
-            |> (if fillerLength % 2 == 0
-                    then identity
-                    else flip (++) [ firstFillerByte ])
-            |> (++) bytes
+    [ firstFillerByte, secondFillerByte ]
+        |> List.repeat (fillerLength // 2)
+        |> List.concat
+        |> (if modBy 2 fillerLength == 0 then
+                identity
+
+            else
+                \a -> (++) a [ firstFillerByte ]
+           )
+        |> (++) bytes
 
 
 firstFillerByte : Int
-firstFillerByte = 236
+firstFillerByte =
+    236
 
 
 secondFillerByte : Int
-secondFillerByte = 17
+secondFillerByte =
+    17
 
 
 
@@ -291,19 +339,19 @@ secondFillerByte = 17
 ---------------------------------------------------------------------
 
 
-toBlocks : ( Model, List a ) -> Result Error ( Model, List (List a))
-toBlocks (({ groupInfo } as model), byteList ) =
+toBlocks : ( Model, List a ) -> Result Error ( Model, List (List a) )
+toBlocks ( { groupInfo } as model, byteList ) =
     case groupInfo.maybeGroup2 of
         Just group2 ->
             breakList False groupInfo.group1 ( byteList, [] )
                 |> Result.andThen (breakList True group2)
                 |> Result.map (Tuple.second >> List.reverse)
-                |> Result.map ((,) model)
+                |> Result.map (\b -> ( model, b ))
 
         Nothing ->
             breakList True groupInfo.group1 ( byteList, [] )
                 |> Result.map (Tuple.second >> List.reverse)
-                |> Result.map ((,) model)
+                |> Result.map (\b -> ( model, b ))
 
 
 breakList : Bool -> ( Int, Int ) -> ( List a, List (List a) ) -> Result Error ( List a, List (List a) )
@@ -311,14 +359,13 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
     if times > 0 then
         let
             block =
-                List.take itemCount byteList
+                List.keep itemCount byteList
 
             remainList =
                 List.drop itemCount byteList
-
         in
-            ( remainList, block :: progress )
-                |> breakList checkFinish ( (times - 1), itemCount )
+        ( remainList, block :: progress )
+            |> breakList checkFinish ( times - 1, itemCount )
 
     else if checkFinish && List.length byteList > 0 then
         Result.Err InputLengthOverflow
@@ -336,7 +383,7 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
 getErrorCorrection : ( Model, List (List Int) ) -> Result Error ( Model, List (List Int), List (List Int) )
 getErrorCorrection ( model, dataBlocks ) =
     ErrorCorrection.get model.groupInfo.ecPerBlock dataBlocks
-        |> Result.map ((,,) model dataBlocks)
+        |> Result.map (\c -> ( model, dataBlocks, c ))
 
 
 
@@ -350,5 +397,4 @@ concatTranspose ( model, dataBlocks, ecBlocks ) =
     transpose ecBlocks
         |> (++) (transpose dataBlocks)
         |> List.concat
-        |> (,) model
-
+        |> (\b -> ( model, b ))

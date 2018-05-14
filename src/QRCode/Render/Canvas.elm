@@ -1,14 +1,14 @@
 module QRCode.Render.Canvas
     exposing
         ( view
-        , viewWithModuleSize
         , viewWithAbsoluteSize
+        , viewWithModuleSize
         )
 
-import Html exposing (Html)
-import Collage exposing (Form, collage, group, filled, move, moveX, moveY, square)
-import Element
+import Collage exposing (Form, collage, filled, group, move, moveX, moveY, square)
 import Color exposing (black, white)
+import Element
+import Html exposing (Html)
 
 
 view : List (List Bool) -> Html msg
@@ -31,16 +31,16 @@ viewWithModuleSize moduleSize matrix =
         centerDistance =
             toFloat (qrCodeSize - moduleSize) / 2
     in
-        collage
-            totalSize
-            totalSize
-            [ toFloat totalSize
-                |> square
-                |> filled white
-            , matrixToForm moduleSize matrix
-                |> move ( -centerDistance, centerDistance )
-            ]
-            |> Element.toHtml
+    collage
+        totalSize
+        totalSize
+        [ toFloat totalSize
+            |> square
+            |> filled white
+        , matrixToForm moduleSize matrix
+            |> move ( -centerDistance, centerDistance )
+        ]
+        |> Element.toHtml
 
 
 matrixToForm : Int -> List (List Bool) -> Form
@@ -62,6 +62,7 @@ canvasRow moduleSize row =
                 canvasModule moduleSize
                     |> moveX (toFloat (index * moduleSize))
                     |> Just
+
             else
                 Nothing
         )
@@ -100,20 +101,21 @@ viewWithAbsoluteSize matrixAbsSize matrix =
         centerDistance =
             toFloat (qrCodeSize - moduleSize) / 2
     in
-        collage
-            totalSize
-            totalSize
-            [ toFloat totalSize
-                |> square
-                |> filled white
-            , if (totalSize + moduleSize) % 2 == 0 then
-                matrixToForm moduleSize matrix
-                    |> move ( -centerDistance, centerDistance )
-              else
-                matrixToForm2 moduleSize matrix
-                    |> move ( -centerDistance, centerDistance )
-            ]
-            |> Element.toHtml
+    collage
+        totalSize
+        totalSize
+        [ toFloat totalSize
+            |> square
+            |> filled white
+        , if (totalSize + moduleSize) % 2 == 0 then
+            matrixToForm moduleSize matrix
+                |> move ( -centerDistance, centerDistance )
+
+          else
+            matrixToForm2 moduleSize matrix
+                |> move ( -centerDistance, centerDistance )
+        ]
+        |> Element.toHtml
 
 
 matrixToForm2 : Int -> List (List Bool) -> Form
@@ -135,6 +137,7 @@ canvasRow2 moduleSize row =
                 canvasModule moduleSize
                     |> moveX (toFloat (index * moduleSize) + 0.5)
                     |> Just
+
             else
                 Nothing
         )

@@ -1,24 +1,30 @@
-module QRCode.Encode.Alphanumeric exposing
-    ( isValid
-    , encode
-    )
-
+module QRCode.Encode.Alphanumeric
+    exposing
+        ( encode
+        , isValid
+        )
 
 import Dict exposing (Dict)
-import Regex exposing (Regex)
 import QRCode.Error exposing (Error(..))
-import QRCode.Helpers exposing (listResult, breakStr)
-
+import QRCode.Helpers exposing (breakStr, listResult)
+import Regex exposing (Regex)
 
 
 isValid : String -> Bool
 isValid input =
-    Regex.contains isValidRegex input
+    Maybe.map (\r -> Regex.contains r input) onlyAlphanumeric
+        |> Maybe.withDefault False
 
 
-isValidRegex : Regex
-isValidRegex =
-    Regex.regex "^[0-9A-Z $%*+\\-.\\/:]+$"
+
+-- 0–9, A–Z [upper-case only], space, $, %, *, +, -, ., /, :
+
+
+onlyAlphanumeric : Maybe Regex
+onlyAlphanumeric =
+    Regex.fromStringWith
+        { caseInsensitive = False, multiline = False }
+        "^[0-9A-Z $%*+\\-.\\/:]+$"
 
 
 encode : String -> Result Error (List ( Int, Int ))
@@ -32,17 +38,20 @@ toBinary str =
     case String.toList str of
         firstChar :: secondChar :: [] ->
             toAlphanumericCode firstChar
-                |> Result.andThen (\firstCode ->
+                |> Result.andThen
+                    (\firstCode ->
                         toAlphanumericCode secondChar
-                            |> Result.map ((,) firstCode))
-                |> Result.map (\(first, second) ->
-                        (first * 45) + second)
-                |> Result.map (flip (,) 11)
-
+                            |> Result.map (\b -> ( firstCode, b ))
+                    )
+                |> Result.map
+                    (\( first, second ) ->
+                        (first * 45) + second
+                    )
+                |> Result.map (\a -> ( a, 11 ))
 
         char :: [] ->
             toAlphanumericCode char
-                |> Result.map (flip (,) 6)
+                |> Result.map (\a -> ( a, 6 ))
 
         _ ->
             Result.Err InvalidAlphanumericChar
@@ -101,4 +110,5 @@ alphanumericCodes =
     , ( '.', 42 )
     , ( '/', 43 )
     , ( ':', 44 )
-    ] |> Dict.fromList
+    ]
+        |> Dict.fromList

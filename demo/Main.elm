@@ -1,41 +1,37 @@
 module Main exposing (..)
 
-import Json.Decode as Json
+import Browser exposing (Page)
+import Browser.Navigation
 import Html exposing (..)
-import Html.Attributes exposing (type_, selected, title)
-import Html.Events exposing (onInput, onSubmit, on, targetValue)
+import Html.Attributes exposing (selected, title, type_, style)
+import Html.Events exposing (on, onInput, onSubmit, targetValue)
 import Html.Lazy exposing (lazy3)
-import Navigation
+import Json.Decode as Decode exposing (Value)
 import QRCode exposing (QRCode)
 import QRCode.ECLevel as ECLevel exposing (ECLevel)
 import QRCode.Error exposing (Error)
+import Url.Parser exposing (Url)
 
 
-main : Program Never Model Msg
+main : Program Value Model Msg
 main =
-    Navigation.program UrlChange
+    Browser.fullscreen
         { init = init
+        , onNavigation = Just onNavigation
+        , subscriptions = \_ -> Sub.none
         , update = update
         , view = view
-        , subscriptions = \_ -> Sub.none
         }
 
 
-init : Navigation.Location -> ( Model, Cmd Msg )
-init location =
-    let
-        initStr =
-            String.dropLeft 1 location.hash
-    in
-        ( if String.isEmpty initStr then
-            initModel
-          else
-            { initModel
-                | message = initStr
-                , finalMessage = initStr
-            }
-        , Cmd.none
-        )
+init : Browser.Env Value -> ( Model, Cmd Msg )
+init { url, flags } =
+    ( initModel, Cmd.none )
+
+
+onNavigation : Url -> Msg
+onNavigation url =
+    UrlChange url
 
 
 
@@ -54,14 +50,13 @@ initModel : Model
 initModel =
     { message = ""
     , ecLevel = ECLevel.Q
-    , renderer = Canvas
+    , renderer = Svg
     , finalMessage = "Elm QR Code"
     }
 
 
 type Renderer
-    = Canvas
-    | Svg
+    = Svg
     | String_
 
 
@@ -70,7 +65,7 @@ type Renderer
 
 
 type Msg
-    = UrlChange Navigation.Location
+    = UrlChange Url
     | UpdateMessage String
     | ChangeRenderer Renderer
     | ChangeECLevel ECLevel
@@ -110,8 +105,13 @@ update msg model =
 -- VIEW
 
 
-view : Model -> Html Msg
-view { ecLevel, renderer, finalMessage } =
+view : Model -> Page Msg
+view model =
+    Page "QR Code" [ view_ model ]
+
+
+view_ : Model -> Html Msg
+view_ { ecLevel, renderer, finalMessage } =
     div []
         [ form [ onSubmit Render ]
             [ input
@@ -122,7 +122,7 @@ view { ecLevel, renderer, finalMessage } =
             , select
                 [ title "Error Correction Level"
                 , targetValue
-                    |> Json.map
+                    |> Decode.map
                         (\str ->
                             case str of
                                 "L" ->
@@ -137,7 +137,7 @@ view { ecLevel, renderer, finalMessage } =
                                 _ ->
                                     ECLevel.H
                         )
-                    |> Json.map ChangeECLevel
+                    |> Decode.map ChangeECLevel
                     |> on "change"
                 ]
                 [ option
@@ -156,22 +156,17 @@ view { ecLevel, renderer, finalMessage } =
             , select
                 [ title "Renderer"
                 , targetValue
-                    |> Json.map
+                    |> Decode.map
                         (\str ->
-                            if str == "Canvas" then
-                                Canvas
-                            else if str == "SVG" then
+                            if str == "SVG" then
                                 Svg
                             else
                                 String_
                         )
-                    |> Json.map ChangeRenderer
+                    |> Decode.map ChangeRenderer
                     |> on "change"
                 ]
                 [ option
-                    [ selected (renderer == Canvas) ]
-                    [ text "Canvas" ]
-                , option
                     [ selected (renderer == Svg) ]
                     [ text "SVG" ]
                 , option
@@ -188,16 +183,19 @@ qrCodeView : String -> ECLevel -> Renderer -> Html msg
 qrCodeView message ecLevel renderer =
     QRCode.encodeWithECLevel message ecLevel
         |> qrCodeRender renderer
-        |> Result.withDefault
-            (Html.text "Error while encoding to QR Code.")
+        |> Result.mapError Debug.toString
+        |> \n ->
+            case n of
+                Ok a ->
+                    a
+
+                Err a ->
+                    Html.text a
 
 
 qrCodeRender : Renderer -> Result Error QRCode -> Result Error (Html msg)
 qrCodeRender renderer =
     case renderer of
-        Canvas ->
-            Result.map QRCode.toCanvas
-
         Svg ->
             Result.map QRCode.toSvg
 
@@ -208,12 +206,10 @@ qrCodeRender renderer =
 toHtml : String -> Html msg
 toHtml qrCodeStr =
     Html.pre
-        [ Html.Attributes.style
-            [ ( "line-height", "0.6" )
-            , ( "background", "white" )
-            , ( "color", "black" )
-            , ( "padding", "20px" )
-            , ( "letter-spacing", "-0.5px" )
-            ]
+        [ style "line-height" "0.6"
+        , style "background" "white"
+        , style "color" "black"
+        , style "padding" "20px"
+        , style "letter-spacing" "-0.5px"
         ]
         [ Html.code [] [ Html.text qrCodeStr ] ]

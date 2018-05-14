@@ -1,50 +1,58 @@
-module QRCode.Matrix exposing
-    ( Model
-    , apply
-    )
-
+module QRCode.Matrix
+    exposing
+        ( Model
+        , apply
+        )
 
 import Array exposing (Array)
 import Bitwise exposing (shiftLeftBy, shiftRightBy, shiftRightZfBy)
+import QRCode.ECLevel exposing (ECLevel(..))
+import QRCode.Encode as Encode
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (transpose)
-import QRCode.Encode as Encode
-import QRCode.ECLevel exposing (ECLevel(..))
 
 
-type alias Model = List (List Bool)
+type alias Model =
+    List (List Bool)
 
 
-type alias Matrix = Array (Maybe Module)
+type alias Matrix =
+    Array (Maybe Module)
 
 
-type alias Module = ( Bool, Bool ) -- ( isReserved, isDark )
+
+-- ( isReserved, isDark )
+
+
+type alias Module =
+    ( Bool, Bool )
 
 
 apply : ( Encode.Model, List Int ) -> Result Error Model
-apply ( { ecLevel, groupInfo }, bytes )  =
+apply ( { ecLevel, groupInfo }, bytes ) =
     let
-        version = groupInfo.version
+        version =
+            groupInfo.version
 
-        size = ((version - 1) * 4) + 21
-
+        size =
+            ((version - 1) * 4) + 21
     in
-        Array.initialize (size * size) (always Nothing)
-            |> finderPattern size -1 -1
-            |> finderPattern size (size - 8) -1
-            |> finderPattern size -1 (size - 8)
-            |> reserveFormatInfo size
-            |> setVersionInfo version size
-            |> darkModule version size
-            |> timingPattern size
-            |> alignmentPattern version size
-            |> Result.map (addData size bytes)
-            |> Result.map (getBestMask ecLevel size)
-            --|> Result.map (setFormatInfo ecLevel size)
-            --|> Result.map (Model size)
+    Array.initialize (size * size) (always Nothing)
+        |> finderPattern size -1 -1
+        |> finderPattern size (size - 8) -1
+        |> finderPattern size -1 (size - 8)
+        |> reserveFormatInfo size
+        |> setVersionInfo version size
+        |> darkModule version size
+        |> timingPattern size
+        |> alignmentPattern version size
+        |> Result.map (addData size bytes)
+        |> Result.map (getBestMask ecLevel size)
 
 
 
+--|> Result.map (setFormatInfo ecLevel size)
+--|> Result.map (Model size)
 ---------------------------------------------------------------------
 -- Finder Pattern
 ---------------------------------------------------------------------
@@ -64,19 +72,29 @@ finderRange =
 setFinder : Int -> Int -> Int -> ( Int, Int ) -> Matrix -> Matrix
 setFinder size rowOffset colOffset ( row, col ) matrix =
     let
-        finalRow = row + rowOffset
-        finalCol = col + colOffset
+        finalRow =
+            row + rowOffset
 
+        finalCol =
+            col + colOffset
     in
-        if finalRow < 0 || finalCol < 0
-            || finalRow >= size || finalCol >= size then
-                matrix
+    if
+        finalRow
+            < 0
+            || finalCol
+            < 0
+            || finalRow
+            >= size
+            || finalCol
+            >= size
+    then
+        matrix
 
-        else
-            Array.set
-                (getIndex size finalRow finalCol)
-                (Just ( True, finderColor row col ))
-                matrix
+    else
+        Array.set
+            (getIndex size finalRow finalCol)
+            (Just ( True, finderColor row col ))
+            matrix
 
 
 finderColor : Int -> Int -> Bool
@@ -100,31 +118,33 @@ reserveFormatInfo size matrix =
 setFormatInfo : ECLevel -> Int -> Mask -> Matrix -> Matrix
 setFormatInfo ecLevel size mask matrix =
     let
-        bits = encodeFormatInfo ecLevel mask
+        bits =
+            encodeFormatInfo ecLevel mask
 
         isBlack bits_ count =
             shiftRightBy count bits_
                 |> Bitwise.and 1
                 |> (==) 1
-
     in
-        setFormatInfo_ size (isBlack bits) 0 matrix
+    setFormatInfo_ size (isBlack bits) 0 matrix
 
 
-setFormatInfo_ : Int -> ( Int -> Bool ) -> Int -> Matrix -> Matrix
+setFormatInfo_ : Int -> (Int -> Bool) -> Int -> Matrix -> Matrix
 setFormatInfo_ size isBlackFn count matrix =
     if count < 15 then
         let
-            ( x1, y1 ) = formatInfoHorizontal size count
+            ( x1, y1 ) =
+                formatInfoHorizontal size count
 
-            ( x2, y2 ) =  formatInfoVertical size count
+            ( x2, y2 ) =
+                formatInfoVertical size count
 
-            isBlack = isBlackFn count
-
+            isBlack =
+                isBlackFn count
         in
-            setFormatModule size isBlack x1 y1 matrix
-                |> setFormatModule size isBlack x2 y2
-                |> setFormatInfo_ size isBlackFn (count + 1)
+        setFormatModule size isBlack x1 y1 matrix
+            |> setFormatModule size isBlack x2 y2
+            |> setFormatInfo_ size isBlackFn (count + 1)
 
     else
         matrix
@@ -136,7 +156,7 @@ formatInfoHorizontal size count =
         ( 8, size - count - 1 )
 
     else if count < 9 then
-        ( 8, 15 - count)
+        ( 8, 15 - count )
 
     else
         ( 8, 15 - count - 1 )
@@ -166,18 +186,23 @@ encodeFormatInfo ecLevel mask =
             shiftLeftBy 3 (ecLevelToInt ecLevel)
                 |> Bitwise.or (maskToInt mask)
 
-        d = shiftLeftBy 10 formatInfoInt
+        d =
+            shiftLeftBy 10 formatInfoInt
 
-        g15Int = 1335
+        g15Int =
+            1335
 
-        g15Digit = getBCHDigit g15Int
+        g15Digit =
+            getBCHDigit g15Int
 
-        g15Mask = 21522
+        g15Mask =
+            21522
 
         helper d_ =
             if getBCHDigit d_ - g15Digit >= 0 then
-                getBCHDigit d_ - g15Digit
-                    |> flip shiftLeftBy g15Int
+                getBCHDigit d_
+                    - g15Digit
+                    |> (\a -> shiftLeftBy a g15Int)
                     |> Bitwise.xor d_
                     |> helper
 
@@ -185,18 +210,24 @@ encodeFormatInfo ecLevel mask =
                 shiftLeftBy 10 formatInfoInt
                     |> Bitwise.or d_
                     |> Bitwise.xor g15Mask
-
     in
-        helper d
+    helper d
 
 
 ecLevelToInt : ECLevel -> Int
 ecLevelToInt ecLevel =
     case ecLevel of
-        L -> 1
-        M -> 0
-        Q -> 3
-        H -> 2
+        L ->
+            1
+
+        M ->
+            0
+
+        Q ->
+            3
+
+        H ->
+            2
 
 
 
@@ -209,40 +240,40 @@ setVersionInfo : Int -> Int -> Matrix -> Matrix
 setVersionInfo version size matrix =
     if version >= 7 then
         let
-            bits = encodeVersionInfo version
+            bits =
+                encodeVersionInfo version
 
             isBlack bits_ count =
                 shiftRightBy count bits_
                     |> Bitwise.and 1
                     |> (==) 1
-
         in
-            setVersionInfo_ size (isBlack bits) 0 matrix
+        setVersionInfo_ size (isBlack bits) 0 matrix
 
     else
         matrix
 
 
-setVersionInfo_ : Int -> ( Int -> Bool ) -> Int -> Matrix -> Matrix
+setVersionInfo_ : Int -> (Int -> Bool) -> Int -> Matrix -> Matrix
 setVersionInfo_ size isBlackFn count matrix =
     if count < 18 then
         let
             topRight =
                 ( floor (toFloat count / 3)
-                , count % 3 + size - 8 - 3
+                , modBy 3 count + size - 8 - 3
                 )
 
             bottomLeft =
-                ( count % 3 + size - 8 - 3
+                ( modBy 3 count + size - 8 - 3
                 , floor (toFloat count / 3)
                 )
 
-            isBlack = isBlackFn count
-
+            isBlack =
+                isBlackFn count
         in
-            setVersionModule size isBlack topRight matrix
-                |> setVersionModule size isBlack bottomLeft
-                |> setVersionInfo_ size isBlackFn (count + 1)
+        setVersionModule size isBlack topRight matrix
+            |> setVersionModule size isBlack bottomLeft
+            |> setVersionInfo_ size isBlackFn (count + 1)
 
     else
         matrix
@@ -256,25 +287,28 @@ setVersionModule size isBlack ( row, col ) =
 encodeVersionInfo : Int -> Int
 encodeVersionInfo version =
     let
-        d = shiftLeftBy 12 version
+        d =
+            shiftLeftBy 12 version
 
-        g18Int = 7973
+        g18Int =
+            7973
 
-        g18Digit = getBCHDigit g18Int
+        g18Digit =
+            getBCHDigit g18Int
 
         helper d_ =
             if getBCHDigit d_ - g18Digit >= 0 then
-                getBCHDigit d_ - g18Digit
-                    |> flip shiftLeftBy g18Int
+                getBCHDigit d_
+                    - g18Digit
+                    |> (\a -> shiftLeftBy a g18Int)
                     |> Bitwise.xor d_
                     |> helper
 
             else
                 shiftLeftBy 12 version
                     |> Bitwise.or d_
-
     in
-        helper d
+    helper d
 
 
 
@@ -298,9 +332,12 @@ darkModule version size =
 
 timingPattern : Int -> Matrix -> Matrix
 timingPattern size matrix =
-    let range = List.range 8 (size - 9)
-    in List.foldl (setTiming size 6) matrix range
-        |> flip (List.foldl (flip (setTiming size) 6)) range
+    let
+        range =
+            List.range 8 (size - 9)
+    in
+    List.foldl (setTiming size 6) matrix range
+        |> (\a -> List.foldl (\b -> setTiming size b 6) a range)
 
 
 setTiming : Int -> Int -> Int -> Matrix -> Matrix
@@ -310,9 +347,11 @@ setTiming size row col =
 
 timingColor : Int -> Int -> Maybe Module
 timingColor row col =
-    if (row + col) % 2 == 0
-        then Just ( True, True )
-        else Just ( True, False )
+    if modBy 2 (row + col) == 0 then
+        Just ( True, True )
+
+    else
+        Just ( True, False )
 
 
 
@@ -325,7 +364,7 @@ alignmentPattern : Int -> Int -> Matrix -> Result Error Matrix
 alignmentPattern version size matrix =
     Array.get (version - 1) alignmentPatternData
         |> Result.fromMaybe AlignmentPatternNotFound
-        |> Result.map (flip (setAlignments size) matrix)
+        |> Result.map (\a -> setAlignments size a matrix)
 
 
 setAlignments : Int -> List Int -> Matrix -> Matrix
@@ -361,10 +400,21 @@ setAlignModule size rowPos colPos ( row, col ) =
 
 alignmentColor : Int -> Int -> Maybe Module
 alignmentColor row col =
-    if row == -2 || row == 2 || col == -2 || col == 2
-        || (row == 0 && col == 0)
-            then Just ( True, True )
-            else Just ( True, False )
+    if
+        row
+            == -2
+            || row
+            == 2
+            || col
+            == -2
+            || col
+            == 2
+            || (row == 0 && col == 0)
+    then
+        Just ( True, True )
+
+    else
+        Just ( True, False )
 
 
 
@@ -412,7 +462,10 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
                     { placement
                         | col = col - 1
                         , isRight = True
-                    } bytes offset matrix
+                    }
+                    bytes
+                    offset
+                    matrix
 
             else if row < 0 then
                 addDataModule
@@ -421,7 +474,10 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
                         , col = col - 2
                         , isRight = True
                         , isUp = False
-                    } bytes offset matrix
+                    }
+                    bytes
+                    offset
+                    matrix
 
             else if row >= size then
                 addDataModule
@@ -430,18 +486,24 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
                         , col = col - 2
                         , isRight = True
                         , isUp = True
-                    } bytes offset matrix
+                    }
+                    bytes
+                    offset
+                    matrix
 
             else if isOccupy row col size matrix then
                 addDataModule
                     (nextModule placement)
-                    bytes offset matrix
+                    bytes
+                    offset
+                    matrix
 
             else
                 setDataModule placement head offset matrix
                     |> addDataModule
                         (nextModule placement)
-                        bytes (offset + 1)
+                        bytes
+                        (offset + 1)
 
 
 nextModule : Placement -> Placement
@@ -513,43 +575,65 @@ patternList =
 maskToInt : Mask -> Int
 maskToInt mask =
     case mask of
-        Pattern0 -> 0
-        Pattern1 -> 1
-        Pattern2 -> 2
-        Pattern3 -> 3
-        Pattern4 -> 4
-        Pattern5 -> 5
-        Pattern6 -> 6
-        Pattern7 -> 7
+        Pattern0 ->
+            0
+
+        Pattern1 ->
+            1
+
+        Pattern2 ->
+            2
+
+        Pattern3 ->
+            3
+
+        Pattern4 ->
+            4
+
+        Pattern5 ->
+            5
+
+        Pattern6 ->
+            6
+
+        Pattern7 ->
+            7
 
 
-maskFunction : Mask -> ( ( Int, Int ) -> Bool )
+maskFunction : Mask -> (( Int, Int ) -> Bool)
 maskFunction mask =
     case mask of
-        Pattern0 -> \(row, col) ->
-            (row + col) % 2 == 0
+        Pattern0 ->
+            \( row, col ) ->
+                modBy 2 (row + col) == 0
 
-        Pattern1 -> \(row, _) ->
-            row % 2 == 0
+        Pattern1 ->
+            \( row, _ ) ->
+                modBy 2 row == 0
 
-        Pattern2 -> \(_, col) ->
-            col % 3 == 0
+        Pattern2 ->
+            \( _, col ) ->
+                modBy 3 col == 0
 
-        Pattern3 -> \(row, col) ->
-            (row + col) % 3 == 0
+        Pattern3 ->
+            \( row, col ) ->
+                modBy 3 (row + col) == 0
 
-        Pattern4 -> \(row, col) ->
-            (floor (toFloat row / 2) + floor (toFloat col / 3))
-                % 2 == 0
+        Pattern4 ->
+            \( row, col ) ->
+                modBy 2 (floor (toFloat row / 2) + floor (toFloat col / 3)) == 0
 
-        Pattern5 -> \(row, col) ->
-            (row * col) % 2 + (row * col) % 3 == 0
+        Pattern5 ->
+            \( row, col ) ->
+                modBy 2 (row * col) + modBy 3 (row * col) == 0
 
-        Pattern6 -> \(row, col) ->
-            ((row * col) % 2 + (row * col) % 3) % 2 == 0
+        Pattern6 ->
+            \( row, col ) ->
+                modBy 2 (modBy 2 (row * col) + modBy 3 (row * col)) == 0
 
-        Pattern7 -> \(row, col) ->
-            ((row * col) % 3 + (row + col) % 2) % 2 == 0
+        Pattern7 ->
+            \( row, col ) ->
+                modBy 2 (modBy 3 (row * col) + modBy 2 (row + col)) == 0
 
 
 getBestMask : ECLevel -> Int -> Matrix -> Model
@@ -568,13 +652,12 @@ getBestMask_ ecLevel size matrix mask ( minSMatrix, minScore ) =
 
         ( maskSMatrix, maskScore ) =
             getMaskScore size maskedMatrix
-
     in
-        if minScore < maskScore && minScore /= -1 then
-            ( minSMatrix, minScore )
+    if minScore < maskScore && minScore /= -1 then
+        ( minSMatrix, minScore )
 
-        else
-            ( maskSMatrix, maskScore )
+    else
+        ( maskSMatrix, maskScore )
 
 
 getMaskScore : Int -> Matrix -> ( Model, Int )
@@ -587,18 +670,16 @@ getMaskScore size matrix =
         rowList =
             breakList size list []
 
-
         transposedRowList =
             transpose rowList
-
     in
-        rule1Score rowList
-            |> (+) (rule1Score transposedRowList)
-            |> (+) (rule2Score rowList 0)
-            |> (+) (rule3Score rowList)
-            |> (+) (rule3Score transposedRowList)
-            |> (+) (rule4Score size list)
-            |> (,) rowList
+    rule1Score rowList
+        |> (+) (rule1Score transposedRowList)
+        |> (+) (rule2Score rowList 0)
+        |> (+) (rule3Score rowList)
+        |> (+) (rule3Score transposedRowList)
+        |> (+) (rule4Score size list)
+        |> (\b -> ( rowList, b ))
 
 
 breakList : Int -> List a -> List (List a) -> List (List a)
@@ -610,12 +691,12 @@ breakList width list acc =
         _ ->
             breakList width
                 (List.drop width list)
-                ((List.take width list) :: acc)
+                (List.keep width list :: acc)
 
 
 rule1Score : List (List Bool) -> Int
 rule1Score =
-    List.map (flip rule1Score_ ( False, 0, 0 ))
+    List.map (\a -> rule1Score_ a ( False, 0, 0 ))
         >> List.sum
 
 
@@ -623,9 +704,11 @@ rule1Score_ : List Bool -> ( Bool, Int, Int ) -> Int
 rule1Score_ simplifiedList ( last, partialScore, score ) =
     case simplifiedList of
         [] ->
-            if partialScore >= 5
-                then score + partialScore - 2
-                else score
+            if partialScore >= 5 then
+                score + partialScore - 2
+
+            else
+                score
 
         head :: tail ->
             if last == head then
@@ -666,8 +749,9 @@ rule2Score_ row1 row2 maybeLast score =
 
                 head2 :: tail2 ->
                     if head == head2 then
-                        if (Just head) == maybeLast then
-                            score + 3
+                        if Just head == maybeLast then
+                            score
+                                + 3
                                 |> rule2Score_ tail tail2 (Just head)
 
                         else
@@ -675,7 +759,6 @@ rule2Score_ row1 row2 maybeLast score =
 
                     else
                         rule2Score_ tail tail2 Nothing score
-
 
 
 rule3Score : List (List Bool) -> Int
@@ -686,15 +769,14 @@ rule3Score =
 rule3Score_ : List Bool -> Int -> Int
 rule3Score_ simplifiedList score =
     case simplifiedList of
-        [] -> score
+        [] ->
+            score
 
-        False :: False :: False :: False :: True :: False
-            :: True :: True :: True :: False :: True :: tail ->
-                rule3Score_ tail (score + 40)
+        False :: False :: False :: False :: True :: False :: True :: True :: True :: False :: True :: tail ->
+            rule3Score_ tail (score + 40)
 
-        True :: False :: True :: True :: True :: False :: True
-            :: False :: False :: False :: False :: tail ->
-                rule3Score_ tail (score + 40)
+        True :: False :: True :: True :: True :: False :: True :: False :: False :: False :: False :: tail ->
+            rule3Score_ tail (score + 40)
 
         head :: tail ->
             rule3Score_ tail score
@@ -707,32 +789,34 @@ rule4Score size simplifiedList =
             List.filter identity simplifiedList
                 |> List.length
 
-        moduleCount = toFloat (size * size)
+        moduleCount =
+            toFloat (size * size)
 
         darkPerc =
             round (toFloat (100 * darkCount) / moduleCount)
 
         remOf5 =
-            rem darkPerc 5
+            remainderBy 5 darkPerc
 
         prevMult5 =
-            darkPerc - remOf5
-                |> flip (-) 50
+            darkPerc
+                - remOf5
+                |> (\a -> (-) a 50)
                 |> abs
                 |> toFloat
-                |> flip (/) 5
+                |> (\a -> (/) a 5)
                 |> round
 
         nextMult5 =
-            darkPerc + (5 - remOf5)
-                |> flip (-) 50
+            darkPerc
+                + (5 - remOf5)
+                |> (\a -> (-) a 50)
                 |> abs
                 |> toFloat
-                |> flip (/) 5
+                |> (\a -> (/) a 5)
                 |> round
-
     in
-        min prevMult5 nextMult5 * 10
+    min prevMult5 nextMult5 * 10
 
 
 isDarkModule : Maybe Module -> Bool
@@ -744,10 +828,10 @@ isDarkModule =
 applyMask : Int -> Mask -> Matrix -> Matrix
 applyMask size mask matrix =
     applyMaskFunction (maskFunction mask) size
-        |> flip Array.indexedMap matrix
+        |> (\a -> Array.indexedMap a matrix)
 
 
-applyMaskFunction : ( ( Int, Int ) -> Bool ) -> Int -> Int -> Maybe Module -> Maybe Module
+applyMaskFunction : (( Int, Int ) -> Bool) -> Int -> Int -> Maybe Module -> Maybe Module
 applyMaskFunction function size index maybeModule =
     getCoord size index
         |> function
@@ -782,7 +866,7 @@ getIndex size row col =
 getCoord : Int -> Int -> ( Int, Int )
 getCoord size index =
     ( index // size
-    , index % size
+    , modBy size index
     )
 
 
@@ -791,8 +875,11 @@ isOccupy row col size matrix =
     case Array.get (getIndex size row col) matrix of
         Just module_ ->
             case module_ of
-                Just _ -> True
-                _      -> False
+                Just _ ->
+                    True
+
+                _ ->
+                    False
 
         Nothing ->
             False
@@ -800,25 +887,30 @@ isOccupy row col size matrix =
 
 getAreaCoord : List Int -> List Int -> List ( Int, Int )
 getAreaCoord rows cols =
-    List.foldl (\row list ->
-        List.foldl (\col list_ ->
-            ( row, col ) :: list_
-        ) list cols
-    ) [] rows
+    List.foldl
+        (\row list ->
+            List.foldl
+                (\col list_ ->
+                    ( row, col ) :: list_
+                )
+                list
+                cols
+        )
+        []
+        rows
 
 
 getBCHDigit : Int -> Int
 getBCHDigit int =
     let
-        helper digit int = 
-            if int /= 0 then
-                helper (digit + 1) (shiftRightZfBy 1 int)
+        helper digit int_ =
+            if int_ /= 0 then
+                helper (digit + 1) (shiftRightZfBy 1 int_)
 
             else
                 digit
-
     in
-        helper 0 int
+    helper 0 int
 
 
 
@@ -869,4 +961,5 @@ alignmentPatternData =
     , [ 6, 32, 58, 84, 110, 136, 162 ]
     , [ 6, 26, 54, 82, 110, 138, 166 ]
     , [ 6, 30, 58, 86, 114, 142, 170 ]
-    ] |> Array.fromList
+    ]
+        |> Array.fromList

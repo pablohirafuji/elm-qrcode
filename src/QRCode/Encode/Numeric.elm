@@ -1,23 +1,29 @@
-module QRCode.Encode.Numeric exposing
-    ( isValid
-    , encode
-    )
+module QRCode.Encode.Numeric
+    exposing
+        ( encode
+        , isValid
+        )
 
-
-import Regex exposing (Regex)
 import QRCode.Error exposing (Error(..))
-import QRCode.Helpers exposing (listResult, breakStr)
-
+import QRCode.Helpers exposing (breakStr, listResult)
+import Regex exposing (Regex)
 
 
 isValid : String -> Bool
 isValid input =
-    Regex.contains isValidRegex input
+    Maybe.map (\r -> Regex.contains r input) onlyNumber
+        |> Maybe.withDefault False
 
 
-isValidRegex : Regex
-isValidRegex =
-    Regex.regex "^[0-9]+$"
+
+-- 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+
+
+onlyNumber : Maybe Regex
+onlyNumber =
+    Regex.fromStringWith
+        { caseInsensitive = False, multiline = False }
+        "^[0-9]+$"
 
 
 encode : String -> Result Error (List ( Int, Int ))
@@ -29,13 +35,18 @@ encode str =
 encodeHelp : String -> Result Error ( Int, Int )
 encodeHelp str =
     String.toInt str
-        |> Result.map (flip (,) (numericLength str))
-        |> Result.mapError (always InvalidNumericChar)
+        |> Maybe.map (\a -> ( a, numericLength str ))
+        |> Result.fromMaybe InvalidNumericChar
 
 
 numericLength : String -> Int
 numericLength str =
     case String.length str of
-        1 -> 4
-        2 -> 7
-        _ -> 10
+        1 ->
+            4
+
+        2 ->
+            7
+
+        _ ->
+            10
