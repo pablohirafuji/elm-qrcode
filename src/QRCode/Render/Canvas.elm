@@ -87,7 +87,6 @@ viewWithAbsoluteSize matrixAbsSize matrix =
 
         moduleSize =
             floor (toFloat matrixAbsSize / toFloat (length + 8))
-                |> Debug.log "x"
 
         quietZone =
             matrixAbsSize - (moduleSize * length)
