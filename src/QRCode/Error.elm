@@ -1,14 +1,6 @@
 module QRCode.Error exposing (Error(..))
 
-{-|
 
-@docs Error
-
--}
-
-
-{-| Possible errors.
--}
 type Error
     = AlignmentPatternNotFound
     | InvalidNumericChar

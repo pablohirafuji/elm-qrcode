@@ -7,10 +7,11 @@ import Html.Attributes exposing (selected, title, type_, style)
 import Html.Events exposing (on, onInput, onSubmit, targetValue)
 import Html.Lazy exposing (lazy3)
 import Json.Decode as Decode exposing (Value)
+import Json.Encode as Encode
 import QRCode exposing (QRCode)
 import QRCode.ECLevel as ECLevel exposing (ECLevel)
 import QRCode.Error exposing (Error)
-import Url.Parser exposing (Url)
+import Url exposing (Url)
 
 
 main : Program Value Model Msg
@@ -116,7 +117,8 @@ view_ { ecLevel, renderer, finalMessage } =
         [ form [ onSubmit Render ]
             [ input
                 [ onInput UpdateMessage
-                , Html.Attributes.defaultValue finalMessage
+                , Html.Attributes.property "defaultValue"
+                    (Encode.string finalMessage)
                 ]
                 []
             , select

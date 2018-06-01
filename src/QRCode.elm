@@ -1,32 +1,39 @@
 module QRCode
     exposing
         ( QRCode
+        , ErrorCorrection(..)
         , encode
-        , encodeWithECLevel
+        , encodeWith
         , toString
         , toSvg
+        , Error(..)
         )
 
 {-| QR Code encoding and rendering.
 
-@docs QRCode
+@docs QRCode, ErrorCorrection
 
 
 # Encoding
 
-@docs encode, encodeWithECLevel
+@docs encode, encodeWith
 
 
 # Rendering
 
 @docs toSvg, toString
 
+
+# Error
+
+@docs Error
+
 -}
 
 import Html exposing (Html)
-import QRCode.ECLevel exposing (ECLevel)
+import QRCode.ECLevel as ECLevel exposing (ECLevel)
 import QRCode.Encode as Encode
-import QRCode.Error exposing (Error)
+import QRCode.Error as Error
 import QRCode.Matrix as Matrix exposing (Model)
 import QRCode.Render.String as String_
 import QRCode.Render.Svg as Svg
@@ -38,23 +45,56 @@ type QRCode
     = QRCode (List (List Bool))
 
 
+{-| Error correction level. Provides the following error
+correction capability:
+
+  - **Low**: 7% of codewords can be restored.
+  - **Medium**: 15% of codewords can be restored.
+  - **Quartile**: 25% of codewords can be restored.
+  - **High**: 30% of codewords can be restored.
+
+-}
+type ErrorCorrection
+    = Low
+    | Medium
+    | Quartile
+    | High
+
+
 {-| Transform a string into a result [Error](./QRCode-Error#Error)
-or a [QRCode](#QRCode) using [`ECLevel.Q`](./QRCode-ECLevel#ECLevel)
-(25% of codewords can be restored).
+or a [QRCode](#QRCode) using `Quartile` [ErrorCorrection](#ErrorCorrection).
 -}
 encode : String -> Result Error QRCode
 encode input =
-    encodeWithECLevel input QRCode.ECLevel.Q
+    encodeWith input Quartile
 
 
-{-| Transform a string with a given [EClevel](./QRCode-ECLevel#ECLevel)
+{-| Transform a string with a given [ErrorCorrection](#ErrorCorrection)
 into a result [Error](./QRCode-Error#Error) or a [QRCode](#QRCode).
 -}
-encodeWithECLevel : String -> ECLevel -> Result Error QRCode
-encodeWithECLevel input ecLevel =
-    Encode.encode input ecLevel
+encodeWith : String -> ErrorCorrection -> Result Error QRCode
+encodeWith input ecLevel =
+    convertEC ecLevel
+        |> Encode.encode input
         |> Result.andThen Matrix.apply
         |> Result.map QRCode
+        |> Result.mapError convertError
+
+
+convertEC : ErrorCorrection -> ECLevel
+convertEC ec =
+    case ec of
+        Low ->
+            ECLevel.L
+
+        Medium ->
+            ECLevel.M
+
+        Quartile ->
+            ECLevel.Q
+
+        High ->
+            ECLevel.H
 
 
 {-| Transform a [QRCode](#QRCode) into a svg element.
@@ -110,3 +150,44 @@ Returns:
 toString : QRCode -> String
 toString (QRCode qrCode) =
     String_.view qrCode
+
+
+{-| Possible enconding errors.
+-}
+type Error
+    = AlignmentPatternNotFound
+    | InvalidNumericChar
+    | InvalidAlphanumericChar
+    | InvalidUTF8Char
+    | LogTableException Int
+    | PolynomialMultiplyException
+    | PolynomialModException
+    | InputLengthOverflow
+
+
+convertError : Error.Error -> Error
+convertError e =
+    case e of
+        Error.AlignmentPatternNotFound ->
+            AlignmentPatternNotFound
+
+        Error.InvalidNumericChar ->
+            InvalidNumericChar
+
+        Error.InvalidAlphanumericChar ->
+            InvalidAlphanumericChar
+
+        Error.InvalidUTF8Char ->
+            InvalidUTF8Char
+
+        Error.LogTableException n ->
+            LogTableException n
+
+        Error.PolynomialMultiplyException ->
+            PolynomialMultiplyException
+
+        Error.PolynomialModException ->
+            PolynomialModException
+
+        Error.InputLengthOverflow ->
+            InputLengthOverflow

@@ -37,17 +37,17 @@ apply ( { ecLevel, groupInfo }, bytes ) =
         size =
             ((version - 1) * 4) + 21
     in
-    Array.initialize (size * size) (always Nothing)
-        |> finderPattern size -1 -1
-        |> finderPattern size (size - 8) -1
-        |> finderPattern size -1 (size - 8)
-        |> reserveFormatInfo size
-        |> setVersionInfo version size
-        |> darkModule version size
-        |> timingPattern size
-        |> alignmentPattern version size
-        |> Result.map (addData size bytes)
-        |> Result.map (getBestMask ecLevel size)
+        Array.initialize (size * size) (always Nothing)
+            |> finderPattern size -1 -1
+            |> finderPattern size (size - 8) -1
+            |> finderPattern size -1 (size - 8)
+            |> reserveFormatInfo size
+            |> setVersionInfo version size
+            |> darkModule version size
+            |> timingPattern size
+            |> alignmentPattern version size
+            |> Result.map (addData size bytes)
+            |> Result.map (getBestMask ecLevel size)
 
 
 
@@ -78,23 +78,22 @@ setFinder size rowOffset colOffset ( row, col ) matrix =
         finalCol =
             col + colOffset
     in
-    if
-        finalRow
-            < 0
-            || finalCol
-            < 0
-            || finalRow
-            >= size
-            || finalCol
-            >= size
-    then
-        matrix
-
-    else
-        Array.set
-            (getIndex size finalRow finalCol)
-            (Just ( True, finderColor row col ))
+        if
+            finalRow
+                < 0
+                || finalCol
+                < 0
+                || finalRow
+                >= size
+                || finalCol
+                >= size
+        then
             matrix
+        else
+            Array.set
+                (getIndex size finalRow finalCol)
+                (Just ( True, finderColor row col ))
+                matrix
 
 
 finderColor : Int -> Int -> Bool
@@ -126,7 +125,7 @@ setFormatInfo ecLevel size mask matrix =
                 |> Bitwise.and 1
                 |> (==) 1
     in
-    setFormatInfo_ size (isBlack bits) 0 matrix
+        setFormatInfo_ size (isBlack bits) 0 matrix
 
 
 setFormatInfo_ : Int -> (Int -> Bool) -> Int -> Matrix -> Matrix
@@ -142,10 +141,9 @@ setFormatInfo_ size isBlackFn count matrix =
             isBlack =
                 isBlackFn count
         in
-        setFormatModule size isBlack x1 y1 matrix
-            |> setFormatModule size isBlack x2 y2
-            |> setFormatInfo_ size isBlackFn (count + 1)
-
+            setFormatModule size isBlack x1 y1 matrix
+                |> setFormatModule size isBlack x2 y2
+                |> setFormatInfo_ size isBlackFn (count + 1)
     else
         matrix
 
@@ -154,10 +152,8 @@ formatInfoHorizontal : Int -> Int -> ( Int, Int )
 formatInfoHorizontal size count =
     if count < 8 then
         ( 8, size - count - 1 )
-
     else if count < 9 then
         ( 8, 15 - count )
-
     else
         ( 8, 15 - count - 1 )
 
@@ -166,10 +162,8 @@ formatInfoVertical : Int -> Int -> ( Int, Int )
 formatInfoVertical size count =
     if count < 6 then
         ( count, 8 )
-
     else if count < 8 then
         ( count + 1, 8 )
-
     else
         ( size - 15 + count, 8 )
 
@@ -205,13 +199,12 @@ encodeFormatInfo ecLevel mask =
                     |> (\a -> shiftLeftBy a g15Int)
                     |> Bitwise.xor d_
                     |> helper
-
             else
                 shiftLeftBy 10 formatInfoInt
                     |> Bitwise.or d_
                     |> Bitwise.xor g15Mask
     in
-    helper d
+        helper d
 
 
 ecLevelToInt : ECLevel -> Int
@@ -248,8 +241,7 @@ setVersionInfo version size matrix =
                     |> Bitwise.and 1
                     |> (==) 1
         in
-        setVersionInfo_ size (isBlack bits) 0 matrix
-
+            setVersionInfo_ size (isBlack bits) 0 matrix
     else
         matrix
 
@@ -271,10 +263,9 @@ setVersionInfo_ size isBlackFn count matrix =
             isBlack =
                 isBlackFn count
         in
-        setVersionModule size isBlack topRight matrix
-            |> setVersionModule size isBlack bottomLeft
-            |> setVersionInfo_ size isBlackFn (count + 1)
-
+            setVersionModule size isBlack topRight matrix
+                |> setVersionModule size isBlack bottomLeft
+                |> setVersionInfo_ size isBlackFn (count + 1)
     else
         matrix
 
@@ -303,12 +294,11 @@ encodeVersionInfo version =
                     |> (\a -> shiftLeftBy a g18Int)
                     |> Bitwise.xor d_
                     |> helper
-
             else
                 shiftLeftBy 12 version
                     |> Bitwise.or d_
     in
-    helper d
+        helper d
 
 
 
@@ -336,8 +326,8 @@ timingPattern size matrix =
         range =
             List.range 8 (size - 9)
     in
-    List.foldl (setTiming size 6) matrix range
-        |> (\a -> List.foldl (\b -> setTiming size b 6) a range)
+        List.foldl (setTiming size 6) matrix range
+            |> (\a -> List.foldl (\b -> setTiming size b 6) a range)
 
 
 setTiming : Int -> Int -> Int -> Matrix -> Matrix
@@ -349,7 +339,6 @@ timingColor : Int -> Int -> Maybe Module
 timingColor row col =
     if modBy 2 (row + col) == 0 then
         Just ( True, True )
-
     else
         Just ( True, False )
 
@@ -412,7 +401,6 @@ alignmentColor row col =
             || (row == 0 && col == 0)
     then
         Just ( True, True )
-
     else
         Just ( True, False )
 
@@ -456,7 +444,6 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
         head :: tail ->
             if offset >= 8 then
                 addDataModule placement tail 0 matrix
-
             else if col == 6 then
                 addDataModule
                     { placement
@@ -466,7 +453,6 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
                     bytes
                     offset
                     matrix
-
             else if row < 0 then
                 addDataModule
                     { placement
@@ -478,7 +464,6 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
                     bytes
                     offset
                     matrix
-
             else if row >= size then
                 addDataModule
                     { placement
@@ -490,14 +475,12 @@ addDataModule ({ size, row, col } as placement) bytes offset matrix =
                     bytes
                     offset
                     matrix
-
             else if isOccupy row col size matrix then
                 addDataModule
                     (nextModule placement)
                     bytes
                     offset
                     matrix
-
             else
                 setDataModule placement head offset matrix
                     |> addDataModule
@@ -513,14 +496,12 @@ nextModule ({ row, col, isRight, isUp } as placement) =
             | col = col - 1
             , isRight = False
         }
-
     else if isUp then
         { placement
             | row = row - 1
             , col = col + 1
             , isRight = True
         }
-
     else
         { placement
             | row = row + 1
@@ -653,11 +634,10 @@ getBestMask_ ecLevel size matrix mask ( minSMatrix, minScore ) =
         ( maskSMatrix, maskScore ) =
             getMaskScore size maskedMatrix
     in
-    if minScore < maskScore && minScore /= -1 then
-        ( minSMatrix, minScore )
-
-    else
-        ( maskSMatrix, maskScore )
+        if minScore < maskScore && minScore /= -1 then
+            ( minSMatrix, minScore )
+        else
+            ( maskSMatrix, maskScore )
 
 
 getMaskScore : Int -> Matrix -> ( Model, Int )
@@ -673,13 +653,13 @@ getMaskScore size matrix =
         transposedRowList =
             transpose rowList
     in
-    rule1Score rowList
-        |> (+) (rule1Score transposedRowList)
-        |> (+) (rule2Score rowList 0)
-        |> (+) (rule3Score rowList)
-        |> (+) (rule3Score transposedRowList)
-        |> (+) (rule4Score size list)
-        |> (\b -> ( rowList, b ))
+        rule1Score rowList
+            |> (+) (rule1Score transposedRowList)
+            |> (+) (rule2Score rowList 0)
+            |> (+) (rule3Score rowList)
+            |> (+) (rule3Score transposedRowList)
+            |> (+) (rule4Score size list)
+            |> (\b -> ( rowList, b ))
 
 
 breakList : Int -> List a -> List (List a) -> List (List a)
@@ -691,7 +671,7 @@ breakList width list acc =
         _ ->
             breakList width
                 (List.drop width list)
-                (List.keep width list :: acc)
+                (List.take width list :: acc)
 
 
 rule1Score : List (List Bool) -> Int
@@ -706,7 +686,6 @@ rule1Score_ simplifiedList ( last, partialScore, score ) =
         [] ->
             if partialScore >= 5 then
                 score + partialScore - 2
-
             else
                 score
 
@@ -714,11 +693,9 @@ rule1Score_ simplifiedList ( last, partialScore, score ) =
             if last == head then
                 ( last, partialScore + 1, score )
                     |> rule1Score_ tail
-
             else if partialScore >= 5 then
                 ( head, 0, score + partialScore - 2 )
                     |> rule1Score_ tail
-
             else
                 ( head, 0, score )
                     |> rule1Score_ tail
@@ -753,10 +730,8 @@ rule2Score_ row1 row2 maybeLast score =
                             score
                                 + 3
                                 |> rule2Score_ tail tail2 (Just head)
-
                         else
                             rule2Score_ tail tail2 (Just head) score
-
                     else
                         rule2Score_ tail tail2 Nothing score
 
@@ -816,7 +791,7 @@ rule4Score size simplifiedList =
                 |> (\a -> (/) a 5)
                 |> round
     in
-    min prevMult5 nextMult5 * 10
+        min prevMult5 nextMult5 * 10
 
 
 isDarkModule : Maybe Module -> Bool
@@ -847,7 +822,6 @@ applyMaskColor maybeModule isChange =
 
             _ ->
                 maybeModule
-
     else
         maybeModule
 
@@ -906,11 +880,10 @@ getBCHDigit int =
         helper digit int_ =
             if int_ /= 0 then
                 helper (digit + 1) (shiftRightZfBy 1 int_)
-
             else
                 digit
     in
-    helper 0 int
+        helper 0 int
 
 
 

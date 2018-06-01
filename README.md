@@ -16,11 +16,9 @@ qrCodeView message =
 
 ```
 
-Waiting for an elm `Canvas` package in 0.19 to add this render possibility.
+Waiting for a `Canvas` package in 0.19 to add this render possibility.
 
 If you would like more functionalities, please open an issue on [GitHub](https://github.com/pablohirafuji/elm-qrcode/issues).
-
-[Changelog](https://github.com/pablohirafuji/elm-qrcode/releases).
 
 
 ## Thanks
