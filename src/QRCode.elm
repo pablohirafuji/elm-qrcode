@@ -61,7 +61,7 @@ type ErrorCorrection
     | High
 
 
-{-| Transform a string into a result [Error](./QRCode-Error#Error)
+{-| Transform a string into a result [Error](#Error)
 or a [QRCode](#QRCode) using `Quartile` [ErrorCorrection](#ErrorCorrection).
 -}
 encode : String -> Result Error QRCode
@@ -70,7 +70,7 @@ encode input =
 
 
 {-| Transform a string with a given [ErrorCorrection](#ErrorCorrection)
-into a result [Error](./QRCode-Error#Error) or a [QRCode](#QRCode).
+into a result [Error](#Error) or a [QRCode](#QRCode).
 -}
 encodeWith : String -> ErrorCorrection -> Result Error QRCode
 encodeWith input ecLevel =
