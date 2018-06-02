@@ -3,14 +3,12 @@ module Main exposing (..)
 import Browser exposing (Page)
 import Browser.Navigation
 import Html exposing (..)
-import Html.Attributes exposing (selected, title, type_, style)
+import Html.Attributes exposing (selected, title, type_, style, class, href)
 import Html.Events exposing (on, onInput, onSubmit, targetValue)
 import Html.Lazy exposing (lazy3)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
-import QRCode exposing (QRCode)
-import QRCode.ECLevel as ECLevel exposing (ECLevel)
-import QRCode.Error exposing (Error)
+import QRCode exposing (QRCode, ErrorCorrection(..), Error(..))
 import Url exposing (Url)
 
 
@@ -27,7 +25,9 @@ main =
 
 init : Browser.Env Value -> ( Model, Cmd Msg )
 init { url, flags } =
-    ( initModel, Cmd.none )
+    ( initModel url.fragment
+    , Cmd.none
+    )
 
 
 onNavigation : Url -> Msg
@@ -41,18 +41,18 @@ onNavigation url =
 
 type alias Model =
     { message : String
-    , ecLevel : ECLevel
+    , ecLevel : ErrorCorrection
     , renderer : Renderer
     , finalMessage : String
     }
 
 
-initModel : Model
-initModel =
+initModel : Maybe String -> Model
+initModel mS =
     { message = ""
-    , ecLevel = ECLevel.Q
+    , ecLevel = Quartile
     , renderer = Svg
-    , finalMessage = "Elm QR Code"
+    , finalMessage = Maybe.withDefault "Elm QR Code" mS
     }
 
 
@@ -69,7 +69,7 @@ type Msg
     = UrlChange Url
     | UpdateMessage String
     | ChangeRenderer Renderer
-    | ChangeECLevel ECLevel
+    | ChangeErrorCorrection ErrorCorrection
     | Render
 
 
@@ -91,7 +91,7 @@ update msg model =
             , Cmd.none
             )
 
-        ChangeECLevel ecLevel ->
+        ChangeErrorCorrection ecLevel ->
             ( { model | ecLevel = ecLevel }
             , Cmd.none
             )
@@ -108,91 +108,140 @@ update msg model =
 
 view : Model -> Page Msg
 view model =
-    Page "QR Code" [ view_ model ]
+    Page "Elm QR Code" (view_ model)
 
 
-view_ : Model -> Html Msg
+view_ : Model -> List (Html Msg)
 view_ { ecLevel, renderer, finalMessage } =
-    div []
-        [ form [ onSubmit Render ]
-            [ input
-                [ onInput UpdateMessage
-                , Html.Attributes.property "defaultValue"
-                    (Encode.string finalMessage)
-                ]
-                []
-            , select
-                [ title "Error Correction Level"
-                , targetValue
-                    |> Decode.map
-                        (\str ->
-                            case str of
-                                "L" ->
-                                    ECLevel.L
-
-                                "M" ->
-                                    ECLevel.M
-
-                                "Q" ->
-                                    ECLevel.Q
-
-                                _ ->
-                                    ECLevel.H
-                        )
-                    |> Decode.map ChangeECLevel
-                    |> on "change"
-                ]
-                [ option
-                    [ selected (ecLevel == ECLevel.L) ]
-                    [ text "L" ]
-                , option
-                    [ selected (ecLevel == ECLevel.M) ]
-                    [ text "M" ]
-                , option
-                    [ selected (ecLevel == ECLevel.Q) ]
-                    [ text "Q" ]
-                , option
-                    [ selected (ecLevel == ECLevel.H) ]
-                    [ text "H" ]
-                ]
-            , select
-                [ title "Renderer"
-                , targetValue
-                    |> Decode.map
-                        (\str ->
-                            if str == "SVG" then
-                                Svg
-                            else
-                                String_
-                        )
-                    |> Decode.map ChangeRenderer
-                    |> on "change"
-                ]
-                [ option
-                    [ selected (renderer == Svg) ]
-                    [ text "SVG" ]
-                , option
-                    [ selected (renderer == String_) ]
-                    [ text "String" ]
-                ]
-            , button [ type_ "submit" ] [ text "Render" ]
-            ]
-        , lazy3 qrCodeView finalMessage ecLevel renderer
+    [ h1 [] [ text "Elm QR Code" ]
+    , p [ class "subheading" ]
+        [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
+            [ text "Package" ]
+        , text " / "
+        , a [ href "https://github.com/pablohirafuji/elm-qrcode" ]
+            [ text "GitHub" ]
+        , text " / "
+        , a [ href "https://github.com/pablohirafuji/elm-qrcode/blob/master/demo/Main.elm" ]
+            [ text "Source" ]
         ]
+    , form [ onSubmit Render ]
+        [ input
+            [ onInput UpdateMessage
+            , Html.Attributes.property "defaultValue"
+                (Encode.string finalMessage)
+            ]
+            []
+        , select
+            [ title "Error Correction Level"
+            , targetValue
+                |> Decode.map
+                    (\str ->
+                        case str of
+                            "Low" ->
+                                Low
+
+                            "Medium" ->
+                                Medium
+
+                            "Quartile" ->
+                                Quartile
+
+                            _ ->
+                                High
+                    )
+                |> Decode.map ChangeErrorCorrection
+                |> on "change"
+            ]
+            [ option
+                [ selected (ecLevel == Low) ]
+                [ text "Low" ]
+            , option
+                [ selected (ecLevel == Medium) ]
+                [ text "Medium" ]
+            , option
+                [ selected (ecLevel == Quartile) ]
+                [ text "Quartile" ]
+            , option
+                [ selected (ecLevel == High) ]
+                [ text "High" ]
+            ]
+        , select
+            [ title "Renderer"
+            , targetValue
+                |> Decode.map
+                    (\str ->
+                        if str == "SVG" then
+                            Svg
+                        else
+                            String_
+                    )
+                |> Decode.map ChangeRenderer
+                |> on "change"
+            ]
+            [ option
+                [ selected (renderer == Svg) ]
+                [ text "SVG" ]
+            , option
+                [ selected (renderer == String_) ]
+                [ text "String" ]
+            ]
+        , button [ type_ "submit" ] [ text "Render" ]
+        ]
+    , lazy3 qrCodeView finalMessage ecLevel renderer
+    ]
 
 
-qrCodeView : String -> ECLevel -> Renderer -> Html msg
+qrCodeView : String -> ErrorCorrection -> Renderer -> Html msg
 qrCodeView message ecLevel renderer =
-    QRCode.encodeWithECLevel message ecLevel
+    QRCode.encodeWith message ecLevel
         |> qrCodeRender renderer
-        |> Result.mapError Debug.toString
         |> \n ->
             case n of
                 Ok a ->
                     a
 
-                Err a ->
-                    Html.text a
+                Err e ->
+                    div []
+                        [ p []
+                            [ text "An error occured while encoding to QRCode: "
+                            , i [] [ text (errorToString e) ]
+                            ]
+                        , p []
+                            [ text "If the error is not "
+                            , i [] [ text "InputLengthOverflow" ]
+                            , text " then, please, report at "
+                            , a [ href "https://github.com/pablohirafuji/elm-qrcode/issues" ] [ text "https://github.com/pablohirafuji/elm-qrcode/issues" ]
+                            , text "."
+                            ]
+                        ]
+
+
+errorToString : QRCode.Error -> String
+errorToString e =
+    case e of
+        AlignmentPatternNotFound ->
+            "AlignmentPatternNotFound"
+
+        InvalidNumericChar ->
+            "InvalidNumericChar"
+
+        InvalidAlphanumericChar ->
+            "InvalidAlphanumericChar"
+
+        InvalidUTF8Char ->
+            "InvalidUTF8Char"
+
+        LogTableException i ->
+            "LogTableException " ++ String.fromInt i
+
+        PolynomialMultiplyException ->
+            "PolynomialMultiplyException"
+
+        PolynomialModException ->
+            "PolynomialModException"
+
+        InputLengthOverflow ->
+            "InputLengthOverflow"
 
 
 qrCodeRender : Renderer -> Result Error QRCode -> Result Error (Html msg)
