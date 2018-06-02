@@ -847,15 +847,10 @@ getCoord size index =
 isOccupy : Int -> Int -> Int -> Matrix -> Bool
 isOccupy row col size matrix =
     case Array.get (getIndex size row col) matrix of
-        Just module_ ->
-            case module_ of
-                Just _ ->
-                    True
+        Just (Just _) ->
+            True
 
-                _ ->
-                    False
-
-        Nothing ->
+        _ ->
             False
 
 

@@ -19,7 +19,7 @@ Update to 0.19
 
 * Waiting for a `Canvas` package in 0.19 to add `toCanvasWithModuleSize` and `toCanvasWithAbsoluteSize` again.
 
-** Removed `toBoolList` and `fromBoolList` to avoid invalid QR Codes to be rendered. If one day a decoder is added, the bool list can be validated and these can be added again.
+** Removed `toBoolList` and `fromBoolList` to avoid invalid QR Codes to be rendered. If one day a decoder is added, the bool list can be validated and these functions can be added again.
 
 
 ## 0.18
