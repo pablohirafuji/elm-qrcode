@@ -3,12 +3,12 @@ module Main exposing (..)
 import Browser exposing (Page)
 import Browser.Navigation
 import Html exposing (..)
-import Html.Attributes exposing (selected, title, type_, style, class, href)
+import Html.Attributes exposing (class, href, selected, style, title, type_)
 import Html.Events exposing (on, onInput, onSubmit, targetValue)
 import Html.Lazy exposing (lazy3)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
-import QRCode exposing (QRCode, ErrorCorrection(..), Error(..))
+import QRCode exposing (Error(..), ErrorCorrection(..), QRCode)
 import Url exposing (Url)
 
 
@@ -193,27 +193,28 @@ view_ { ecLevel, renderer, finalMessage } =
 
 qrCodeView : String -> ErrorCorrection -> Renderer -> Html msg
 qrCodeView message ecLevel renderer =
-    QRCode.encodeWith message ecLevel
+    QRCode.encodeWith ecLevel message
         |> qrCodeRender renderer
-        |> \n ->
-            case n of
-                Ok a ->
-                    a
+        |> (\n ->
+                case n of
+                    Ok a ->
+                        a
 
-                Err e ->
-                    div []
-                        [ p []
-                            [ text "An error occured while encoding to QRCode: "
-                            , i [] [ text (errorToString e) ]
+                    Err e ->
+                        div []
+                            [ p []
+                                [ text "An error occured while encoding to QRCode: "
+                                , i [] [ text (errorToString e) ]
+                                ]
+                            , p []
+                                [ text "If the error is not "
+                                , i [] [ text "InputLengthOverflow" ]
+                                , text " then, please, report at "
+                                , a [ href "https://github.com/pablohirafuji/elm-qrcode/issues" ] [ text "https://github.com/pablohirafuji/elm-qrcode/issues" ]
+                                , text "."
+                                ]
                             ]
-                        , p []
-                            [ text "If the error is not "
-                            , i [] [ text "InputLengthOverflow" ]
-                            , text " then, please, report at "
-                            , a [ href "https://github.com/pablohirafuji/elm-qrcode/issues" ] [ text "https://github.com/pablohirafuji/elm-qrcode/issues" ]
-                            , text "."
-                            ]
-                        ]
+           )
 
 
 errorToString : QRCode.Error -> String

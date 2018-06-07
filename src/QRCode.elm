@@ -1,12 +1,12 @@
 module QRCode
     exposing
-        ( QRCode
+        ( Error(..)
         , ErrorCorrection(..)
+        , QRCode
         , encode
         , encodeWith
         , toString
         , toSvg
-        , Error(..)
         )
 
 {-| QR Code encoding and rendering.
@@ -65,15 +65,15 @@ type ErrorCorrection
 or a [QRCode](#QRCode) using `Quartile` [ErrorCorrection](#ErrorCorrection).
 -}
 encode : String -> Result Error QRCode
-encode input =
-    encodeWith input Quartile
+encode =
+    encodeWith Quartile
 
 
 {-| Transform a string with a given [ErrorCorrection](#ErrorCorrection)
 into a result [Error](#Error) or a [QRCode](#QRCode).
 -}
-encodeWith : String -> ErrorCorrection -> Result Error QRCode
-encodeWith input ecLevel =
+encodeWith : ErrorCorrection -> String -> Result Error QRCode
+encodeWith ecLevel input =
     convertEC ecLevel
         |> Encode.encode input
         |> Result.andThen Matrix.apply

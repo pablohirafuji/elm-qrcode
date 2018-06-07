@@ -2,7 +2,11 @@
 
 ## 0.19
 
-### 1.0.0
+### 4.0.0
+
+Change `encodeWith` argument order.
+
+### 3.0.0
 
 Update to 0.19
 
