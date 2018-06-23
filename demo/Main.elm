@@ -1,7 +1,7 @@
 module Main exposing (..)
 
-import Browser exposing (Page)
-import Browser.Navigation
+import Browser exposing (Document)
+import Browser.Navigation exposing (Key)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, selected, style, title, type_)
 import Html.Events exposing (on, onInput, onSubmit, targetValue)
@@ -12,26 +12,27 @@ import QRCode exposing (Error(..), ErrorCorrection(..), QRCode)
 import Url exposing (Url)
 
 
-main : Program Value Model Msg
+main : Program () Model Msg
 main =
-    Browser.fullscreen
+    Browser.application
         { init = init
-        , onNavigation = Just onNavigation
-        , subscriptions = \_ -> Sub.none
-        , update = update
         , view = view
+        , update = update
+        , subscriptions = \_ -> Sub.none
+        , onUrlRequest = \_ -> NoOp
+        , onUrlChange = onUrlChange
         }
 
 
-init : Browser.Env Value -> ( Model, Cmd Msg )
-init { url, flags } =
+init : () -> Url -> Key -> ( Model, Cmd Msg )
+init _ url key =
     ( initModel url.fragment
     , Cmd.none
     )
 
 
-onNavigation : Url -> Msg
-onNavigation url =
+onUrlChange : Url -> Msg
+onUrlChange url =
     UrlChange url
 
 
@@ -66,7 +67,8 @@ type Renderer
 
 
 type Msg
-    = UrlChange Url
+    = NoOp
+    | UrlChange Url
     | UpdateMessage String
     | ChangeRenderer Renderer
     | ChangeErrorCorrection ErrorCorrection
@@ -76,6 +78,11 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        NoOp ->
+            ( model
+            , Cmd.none
+            )
+
         UrlChange _ ->
             ( model
             , Cmd.none
@@ -106,9 +113,9 @@ update msg model =
 -- VIEW
 
 
-view : Model -> Page Msg
+view : Model -> Document Msg
 view model =
-    Page "Elm QR Code" (view_ model)
+    Document "Elm QR Code" (view_ model)
 
 
 view_ : Model -> List (Html Msg)
