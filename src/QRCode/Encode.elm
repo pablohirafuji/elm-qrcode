@@ -1,8 +1,7 @@
-module QRCode.Encode
-    exposing
-        ( Model
-        , encode
-        )
+module QRCode.Encode exposing
+    ( Model
+    , encode
+    )
 
 import Bitwise as Bit exposing (shiftLeftBy, shiftRightBy)
 import QRCode.ECLevel exposing (ECLevel)
@@ -22,13 +21,13 @@ encode inputStr ecLevel =
         mode =
             selectMode inputStr
     in
-        inputStr
-            |> encoder mode
-            |> Result.andThen (selectVersion inputStr ecLevel mode)
-            |> Result.map addInfoAndFinalBits
-            |> Result.andThen toBlocks
-            |> Result.andThen getErrorCorrection
-            |> Result.map concatTranspose
+    inputStr
+        |> encoder mode
+        |> Result.andThen (selectVersion inputStr ecLevel mode)
+        |> Result.map addInfoAndFinalBits
+        |> Result.andThen toBlocks
+        |> Result.andThen getErrorCorrection
+        |> Result.map concatTranspose
 
 
 encoder : Mode -> (String -> Result Error (List ( Int, Int )))
@@ -64,10 +63,13 @@ selectMode : String -> Mode
 selectMode input =
     if Numeric.isValid input then
         Numeric
+
     else if Alphanumeric.isValid input then
         Alphanumeric
+
     else if Byte.isValid input then
         Byte
+
     else
         UTF8
 
@@ -112,15 +114,15 @@ selectVersion inputStr ecLevel mode encodedStr =
 
         -- Add mode indicator bits
     in
-        partialBitsCount
-            |> getVersion ecLevel mode
-            |> Result.map
-                (versionToModel inputStr
-                    ecLevel
-                    mode
-                    partialBitsCount
-                )
-            |> Result.map (\b -> ( encodedStr, b ))
+    partialBitsCount
+        |> getVersion ecLevel mode
+        |> Result.map
+            (versionToModel inputStr
+                ecLevel
+                mode
+                partialBitsCount
+            )
+        |> Result.map (\b -> ( encodedStr, b ))
 
 
 versionToModel : String -> ECLevel -> Mode -> Int -> GroupInfo -> Model
@@ -174,15 +176,16 @@ charCountIndicator { groupInfo, inputStr, mode } bits =
         charCount =
             if mode == UTF8 then
                 List.length bits
+
             else
                 String.length inputStr
 
         length =
             charCountIndicatorLength mode groupInfo.version
     in
-        ( charCount
-        , length
-        )
+    ( charCount
+    , length
+    )
 
 
 charCountIndicatorLength : Mode -> Int -> Int
@@ -200,6 +203,7 @@ charCountIndicatorLength mode version =
 
             UTF8 ->
                 8
+
     else if version <= 26 then
         case mode of
             Numeric ->
@@ -213,6 +217,7 @@ charCountIndicatorLength mode version =
 
             UTF8 ->
                 16
+
     else
         case mode of
             Numeric ->
@@ -253,6 +258,7 @@ bitsToBytes1 bits ( ( remBits, remLength ), bytes ) =
         [] ->
             if remLength == 0 then
                 List.reverse bytes
+
             else
                 Bit.shiftLeftBy (8 - remLength) remBits
                     |> (\a -> (::) a bytes)
@@ -269,7 +275,7 @@ bitsToBytes2 ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
             Bit.shiftLeftBy curLength remBits
                 |> Bit.or curBits
     in
-        bitsToBytes3 ( ( bitsSum, lengthSum ), bytes )
+    bitsToBytes3 ( ( bitsSum, lengthSum ), bytes )
 
 
 bitsToBytes3 : ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
@@ -287,10 +293,11 @@ bitsToBytes3 ( ( bits, length ), bytes ) =
             byte =
                 Bit.shiftRightBy remLength bits
         in
-            ( ( remBits, remLength )
-            , byte :: bytes
-            )
-                |> bitsToBytes3
+        ( ( remBits, remLength )
+        , byte :: bytes
+        )
+            |> bitsToBytes3
+
     else
         ( ( bits, length )
         , bytes
@@ -303,15 +310,16 @@ addFiller capacity bytes =
         fillerLength =
             (capacity // 8) - List.length bytes
     in
-        [ firstFillerByte, secondFillerByte ]
-            |> List.repeat (fillerLength // 2)
-            |> List.concat
-            |> (if modBy 2 fillerLength == 0 then
-                    identity
-                else
-                    \a -> (++) a [ firstFillerByte ]
-               )
-            |> (++) bytes
+    [ firstFillerByte, secondFillerByte ]
+        |> List.repeat (fillerLength // 2)
+        |> List.concat
+        |> (if modBy 2 fillerLength == 0 then
+                identity
+
+            else
+                \a -> (++) a [ firstFillerByte ]
+           )
+        |> (++) bytes
 
 
 firstFillerByte : Int
@@ -355,10 +363,12 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
             remainList =
                 List.drop itemCount byteList
         in
-            ( remainList, block :: progress )
-                |> breakList checkFinish ( times - 1, itemCount )
+        ( remainList, block :: progress )
+            |> breakList checkFinish ( times - 1, itemCount )
+
     else if checkFinish && List.length byteList > 0 then
         Result.Err InputLengthOverflow
+
     else
         Result.Ok ( byteList, progress )
 

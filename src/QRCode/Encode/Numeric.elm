@@ -1,8 +1,7 @@
-module QRCode.Encode.Numeric
-    exposing
-        ( encode
-        , isValid
-        )
+module QRCode.Encode.Numeric exposing
+    ( encode
+    , isValid
+    )
 
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (breakStr, listResult)

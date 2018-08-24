@@ -1,7 +1,4 @@
-module QRCode.Render.Svg
-    exposing
-        ( view
-        )
+module QRCode.Render.Svg exposing (view)
 
 import Html exposing (Html)
 import QRCode.Matrix as Matrix

@@ -1,9 +1,8 @@
-module QRCode.Render.Canvas
-    exposing
-        ( view
-        , viewWithAbsoluteSize
-        , viewWithModuleSize
-        )
+module QRCode.Render.Canvas exposing
+    ( view
+    , viewWithAbsoluteSize
+    , viewWithModuleSize
+    )
 
 import Collage exposing (Form, collage, filled, group, move, moveX, moveY, square)
 import Color exposing (black, white)

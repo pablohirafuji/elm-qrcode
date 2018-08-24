@@ -1,8 +1,7 @@
-module QRCode.Encode.Kanji
-    exposing
-        ( encode
-        , isValid
-        )
+module QRCode.Encode.Kanji exposing
+    ( encode
+    , isValid
+    )
 
 import Bitwise as Bit exposing (shiftRightBy)
 import Char

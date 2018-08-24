@@ -1,7 +1,4 @@
-module QRCode.Render.String
-    exposing
-        ( view
-        )
+module QRCode.Render.String exposing (view)
 
 import QRCode.Matrix as Matrix
 
@@ -13,6 +10,7 @@ view =
             (\isDark ->
                 if isDark then
                     "■"
+
                 else
                     " "
             )

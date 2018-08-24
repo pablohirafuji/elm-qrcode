@@ -1,9 +1,8 @@
-module QRCode.Helpers
-    exposing
-        ( breakStr
-        , listResult
-        , transpose
-        )
+module QRCode.Helpers exposing
+    ( breakStr
+    , listResult
+    , transpose
+    )
 
 
 listResult : (a -> Result x b) -> List b -> List a -> Result x (List b)

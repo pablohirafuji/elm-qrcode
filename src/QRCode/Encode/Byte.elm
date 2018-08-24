@@ -1,8 +1,7 @@
-module QRCode.Encode.Byte
-    exposing
-        ( encode
-        , isValid
-        )
+module QRCode.Encode.Byte exposing
+    ( encode
+    , isValid
+    )
 
 import Char
 import QRCode.Error exposing (Error(..))

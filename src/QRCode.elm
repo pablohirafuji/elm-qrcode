@@ -1,13 +1,9 @@
-module QRCode
-    exposing
-        ( Error(..)
-        , ErrorCorrection(..)
-        , QRCode
-        , encode
-        , encodeWith
-        , toString
-        , toSvg
-        )
+module QRCode exposing
+    ( QRCode, ErrorCorrection(..)
+    , encode, encodeWith
+    , toSvg, toString
+    , Error(..)
+    )
 
 {-| QR Code encoding and rendering.
 

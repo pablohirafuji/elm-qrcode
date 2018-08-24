@@ -32,11 +32,12 @@ get___ ecLength modPoly =
                 modIndex =
                     index + Array.length modPoly - ecLength
             in
-                if modIndex >= 0 then
-                    Array.get modIndex modPoly
-                        |> Maybe.withDefault 0
-                else
-                    0
+            if modIndex >= 0 then
+                Array.get modIndex modPoly
+                    |> Maybe.withDefault 0
+
+            else
+                0
         )
         |> Array.toList
 
@@ -60,11 +61,12 @@ getECPolynomial ecLength =
                     |> Result.andThen
                         (\a -> multiply a (newPolynomial [ 1, getExp count ] 0))
                     |> generate (count + 1)
+
             else
                 polyResult
     in
-        Result.Ok (newPolynomial [ 1 ] 0)
-            |> generate 0
+    Result.Ok (newPolynomial [ 1 ] 0)
+        |> generate 0
 
 
 newPolynomial : List Int -> Int -> Polynomial
@@ -76,12 +78,12 @@ newPolynomial num shift =
         numArray =
             Array.fromList num
     in
-        Array.initialize
-            (List.length num - offset + shift)
-            (\index ->
-                Array.get (index + offset) numArray
-                    |> Maybe.withDefault 0
-            )
+    Array.initialize
+        (List.length num - offset + shift)
+        (\index ->
+            Array.get (index + offset) numArray
+                |> Maybe.withDefault 0
+        )
 
 
 getOffset : ( List Int, Int ) -> Int
@@ -90,6 +92,7 @@ getOffset ( num, offset ) =
         head :: tail ->
             if head == 0 then
                 getOffset ( tail, offset + 1 )
+
             else
                 offset
 
@@ -130,17 +133,18 @@ multiply poly1 poly2 =
                 |> Maybe.map (Bitwise.xor exp)
                 |> Result.fromMaybe PolynomialMultiplyException
     in
-        valuesArray
-            |> List.concat
-            |> List.foldl process (Result.Ok num)
-            |> Result.map Array.toList
-            |> Result.map (\a -> newPolynomial a 0)
+    valuesArray
+        |> List.concat
+        |> List.foldl process (Result.Ok num)
+        |> Result.map Array.toList
+        |> Result.map (\a -> newPolynomial a 0)
 
 
 mod : Polynomial -> Polynomial -> Result Error Polynomial
 mod poly1 poly2 =
     if Array.length poly1 - Array.length poly2 < 0 then
         Result.Ok poly1
+
     else
         let
             getHead poly =
@@ -170,10 +174,10 @@ mod poly1 poly2 =
                     |> Maybe.map (Bitwise.xor exp)
                     |> Result.fromMaybe PolynomialModException
         in
-            numResult
-                |> Result.map Array.toList
-                |> Result.map (\a -> newPolynomial a 0)
-                |> Result.andThen (\a -> mod a poly2)
+        numResult
+            |> Result.map Array.toList
+            |> Result.map (\a -> newPolynomial a 0)
+            |> Result.andThen (\a -> mod a poly2)
 
 
 expTable : Array Int
@@ -198,6 +202,7 @@ getLog : Int -> Result Error Int
 getLog index =
     if index < 1 then
         Result.Err (LogTableException index)
+
     else
         Array.get (index - 1) logTable
             |> Result.fromMaybe (LogTableException index)

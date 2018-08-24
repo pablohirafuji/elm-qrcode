@@ -1,8 +1,7 @@
-module QRCode.GroupInfo
-    exposing
-        ( GroupInfo
-        , getGroupData
-        )
+module QRCode.GroupInfo exposing
+    ( GroupInfo
+    , getGroupData
+    )
 
 import QRCode.ECLevel exposing (ECLevel(..))
 

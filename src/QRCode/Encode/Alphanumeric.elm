@@ -1,8 +1,7 @@
-module QRCode.Encode.Alphanumeric
-    exposing
-        ( encode
-        , isValid
-        )
+module QRCode.Encode.Alphanumeric exposing
+    ( encode
+    , isValid
+    )
 
 import Dict exposing (Dict)
 import QRCode.Error exposing (Error(..))
