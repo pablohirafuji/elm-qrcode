@@ -20,9 +20,8 @@ echo "Target: ${TARGET_BRANCH} branch"
 
 # Run our compile script
 cd $TRAVIS_BUILD_DIR/demo
-sed -i -e 's/\/_compile\/Main.elm/elm.js/g' index.html
 cp index.html $TRAVIS_BUILD_DIR/index.html
-$UGLIFYJS elm.js --output $TRAVIS_BUILD_DIR/elm.js
+$UGLIFYJS elm.js -mc pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9] --output $TRAVIS_BUILD_DIR/elm.js
 
 cd $TRAVIS_BUILD_DIR
 git checkout -b $TARGET_BRANCH

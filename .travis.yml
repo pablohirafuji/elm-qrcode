@@ -8,9 +8,8 @@ node_js: node
 
 cache:
   directories:
-    - elm-stuff
-    - tests/elm-stuff
-    - demo/elm-stuff
+    - tests/elm-stuff/build-artifacts
+    - demo/elm-stuff/build-artifacts
     - node_modules
     - sysconfcpus
 
@@ -22,7 +21,7 @@ env:
     - ELM_VERSION="0.18.0"
     - ELM_TEST_VERSION="0.18.7"
     - SYSCONFCPUS="${TRAVIS_BUILD_DIR}/sysconfcpus/bin/sysconfcpus -n 2"
-    - ELM_MAKE="${TRAVIS_BUILD_DIR}/node_modules/.bin/elm-make"
+    - ELM="${TRAVIS_BUILD_DIR}/node_modules/.bin/elm-make"
     - ELM_TEST="node ${TRAVIS_BUILD_DIR}/node_modules/elm-test/bin/elm-test --compiler ${TRAVIS_BUILD_DIR}/node_modules/.bin/elm-make"
 
 install:
@@ -46,7 +45,7 @@ install:
 script:
   - $SYSCONFCPUS $ELM_TEST
   - cd demo
-  - $SYSCONFCPUS $ELM_MAKE Main.elm --output elm.js --yes
+  - $SYSCONFCPUS $ELM_MAKE make Main.elm --output elm.js --optimize
   - cd ..
 
 after_success:
