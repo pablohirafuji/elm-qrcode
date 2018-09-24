@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (Model, Msg(..), Renderer(..), errorToString, init, initModel, main, onUrlChange, qrCodeRender, qrCodeView, toHtml, update, view, view_)
 
 import Browser exposing (Document)
 import Browser.Navigation exposing (Key)
@@ -120,7 +120,11 @@ view model =
 
 view_ : Model -> List (Html Msg)
 view_ { ecLevel, renderer, finalMessage } =
-    [ h1 [] [ text "Elm QR Code" ]
+    [ node "style" [] [ text stylesheet ]
+    , h1 []
+        [ text "Elm QR Code "
+        , small [] [ text "v3.0.0" ]
+        ]
     , p [ class "subheading" ]
         [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
             [ text "Package" ]
@@ -179,6 +183,7 @@ view_ { ecLevel, renderer, finalMessage } =
                     (\str ->
                         if str == "SVG" then
                             Svg
+
                         else
                             String_
                     )
@@ -272,3 +277,40 @@ toHtml qrCodeStr =
         , style "letter-spacing" "-0.5px"
         ]
         [ Html.code [] [ Html.text qrCodeStr ] ]
+
+
+stylesheet : String
+stylesheet =
+    """
+body {
+    margin:40px auto;max-width:650px;
+    line-height:1.6;
+    font-size:18px;
+    color:#444;
+    padding:0 10px;
+    text-align: center;
+    background-color:#fafafa;
+}
+h1,h2,h3 {
+    line-height:1.2
+}
+h1 {
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+h1 small {
+    font-size: 1rem;
+    color: #888;
+}
+.subheading {
+    margin-top: 0;
+}
+#main > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+input, select, button {
+    box-sizing:border-box;
+    height: 25px;
+}"""

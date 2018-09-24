@@ -1,14 +1,14 @@
-module Tests exposing (..)
+module Tests exposing (all)
 
-import Test exposing (..)
 import Expect
-import Fuzz exposing (list, int, tuple, string)
-import String
-import QRCode.Encode as Encode
-import QRCode.Encode.Numeric as Numeric
-import QRCode.Encode.Alphanumeric as Alphanumeric
-import QRCode.ECLevel as ECLevel
+import Fuzz exposing (int, list, string, tuple)
 import ParseInt exposing (toRadixUnsafe)
+import QRCode.ECLevel as ECLevel
+import QRCode.Encode as Encode
+import QRCode.Encode.Alphanumeric as Alphanumeric
+import QRCode.Encode.Numeric as Numeric
+import String
+import Test exposing (..)
 
 
 all : Test
@@ -76,7 +76,7 @@ all =
             , test "Giant Alphanumeric" <|
                 \() ->
                     Encode.encode "123456789ABCDEFGHIJKLMNOPQRSTUVWXY $%*+-./:" ECLevel.L
-                        |> Result.map (Tuple.first >> .mode >> toString)
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
                         |> Expect.equal (Result.Ok "Alphanumeric")
             , fuzz string "Fuzz ECLevel M" <|
                 \rndStr ->
@@ -90,8 +90,8 @@ all =
                         |> Expect.equal (Result.Ok ())
             , fuzz (Fuzz.intRange 0 10000000000) "Fuzz ECLevel L" <|
                 \rndInt ->
-                    Encode.encode (toString rndInt) ECLevel.L
-                        |> Result.map (Tuple.first >> .mode >> toString)
+                    Encode.encode (Debug.toString rndInt) ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
                         |> Expect.equal (Result.Ok "Numeric")
             ]
         ]
