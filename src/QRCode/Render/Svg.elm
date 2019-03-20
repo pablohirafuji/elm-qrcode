@@ -14,11 +14,8 @@ moduleSize =
 view : Matrix.Model -> Html msg
 view matrix =
     let
-        quietZone =
-            8 * moduleSize
-
         sizePx =
-            String.fromInt (List.length matrix * moduleSize + quietZone)
+            String.fromInt (List.length matrix * moduleSize)
     in
     matrix
         |> List.indexedMap
@@ -37,8 +34,7 @@ view matrix =
 moduleView : Int -> Int -> Bool -> Maybe (Html msg)
 moduleView rowIndex colIndex isDark =
     if isDark then
-        -- Add 4 considering quiet zone
-        Just (rectView (rowIndex + 4) (colIndex + 4))
+        Just (rectView rowIndex colIndex)
 
     else
         Nothing
