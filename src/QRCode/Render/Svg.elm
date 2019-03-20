@@ -3,7 +3,7 @@ module QRCode.Render.Svg exposing (view)
 import Html exposing (Html)
 import QRCode.Matrix as Matrix
 import Svg exposing (rect, svg)
-import Svg.Attributes exposing (fill, height, viewBox, width, x, y)
+import Svg.Attributes exposing (fill, height, shapeRendering, viewBox, width, x, y)
 
 
 moduleSize : Int
@@ -31,6 +31,7 @@ view matrix =
             [ width sizePx
             , height sizePx
             , viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
+            , shapeRendering "crispEdges"
             ]
 
 
