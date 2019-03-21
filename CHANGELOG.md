@@ -1,5 +1,10 @@
 # Changelog
 
+### 3.0.1
+
+Add `shape-rendering` to svg rendering (Thanks @ahstro!)
+
+
 ### 3.0.0
 
 Update to 0.19
