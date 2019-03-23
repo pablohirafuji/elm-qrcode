@@ -1,4 +1,4 @@
-module QRCode.Render.Svg exposing (view)
+module QRCode.Render.Svg exposing (view, viewWithoutQuietZone)
 
 import Html exposing (Html)
 import QRCode.Matrix as Matrix
@@ -13,9 +13,19 @@ moduleSize =
 
 view : Matrix.Model -> Html msg
 view matrix =
+    viewBase 4 matrix
+
+
+viewWithoutQuietZone : Matrix.Model -> Html msg
+viewWithoutQuietZone matrix =
+    viewBase 0 matrix
+
+
+viewBase : Int -> Matrix.Model -> Html msg
+viewBase quietZoneSize matrix =
     let
         quietZone =
-            8 * moduleSize
+            (2 * quietZoneSize) * moduleSize
 
         sizePx =
             String.fromInt (List.length matrix * moduleSize + quietZone)
@@ -23,7 +33,7 @@ view matrix =
     matrix
         |> List.indexedMap
             (\rowIndex row ->
-                List.indexedMap (moduleView rowIndex) row
+                List.indexedMap (moduleView quietZoneSize rowIndex) row
             )
         |> List.concat
         |> List.filterMap identity
@@ -35,11 +45,10 @@ view matrix =
             ]
 
 
-moduleView : Int -> Int -> Bool -> Maybe (Html msg)
-moduleView rowIndex colIndex isDark =
+moduleView : Int -> Int -> Int -> Bool -> Maybe (Html msg)
+moduleView quietZoneSize rowIndex colIndex isDark =
     if isDark then
-        -- Add 4 considering quiet zone
-        Just (rectView (rowIndex + 4) (colIndex + 4))
+        Just (rectView (rowIndex + quietZoneSize) (colIndex + quietZoneSize))
 
     else
         Nothing

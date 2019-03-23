@@ -1,7 +1,7 @@
 module QRCode exposing
     ( QRCode, ErrorCorrection(..)
     , encode, encodeWith
-    , toSvg, toString
+    , toSvg, toSvgWithoutQuietZone, toString
     , Error(..)
     )
 
@@ -17,7 +17,7 @@ module QRCode exposing
 
 # Rendering
 
-@docs toSvg, toString
+@docs toSvg, toSvgWithoutQuietZone, toString
 
 
 # Error
@@ -109,6 +109,13 @@ convertEC ec =
 toSvg : QRCode -> Html msg
 toSvg (QRCode qrCode) =
     Svg.view qrCode
+
+
+{-| Same as [toSvg](#toSvg), but without the [quiet zone](https://en.wikipedia.org/wiki/QR_code#/media/File:QR_Code_Structure_Example_3.svg).
+-}
+toSvgWithoutQuietZone : QRCode -> Html msg
+toSvgWithoutQuietZone (QRCode qrCode) =
+    Svg.viewWithoutQuietZone qrCode
 
 
 {-| Transform a [QRCode](#QRCode) into a string.
