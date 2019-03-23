@@ -1,11 +1,16 @@
 # Changelog
 
+### 3.1.0
+
+Add `toSvgWithoutQuietZone` rendering option (Thanks @ahstro for the idea!)
+
+
 ### 3.0.1
 
 Add `shape-rendering` to svg rendering (Thanks @ahstro!)
 
 
-### 3.0.0
+## 3.0.0
 
 Update to 0.19
 
@@ -44,7 +49,7 @@ Add canvas sizing and utilities.
 Add `QRCode.toCanvas`
 
 
-### 2.0.0
+## 2.0.0
 
 Separate encoding from rendering, add string rendering.
 
@@ -73,6 +78,6 @@ Fix bit to byte [conversion bug](https://github.com/pablohirafuji/elm-qrcode/iss
 - Drop `ParseInt` dependence
 - Perfomance improvements
 
-### 1.0.0
+## 1.0.0
 
 Initial release.
