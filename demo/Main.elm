@@ -123,7 +123,7 @@ view_ { ecLevel, renderer, finalMessage } =
     [ node "style" [] [ text stylesheet ]
     , h1 []
         [ text "Elm QR Code "
-        , small [] [ text "v3.0.0" ]
+        , small [] [ text "v3.1.0" ]
         ]
     , p [ class "subheading" ]
         [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
