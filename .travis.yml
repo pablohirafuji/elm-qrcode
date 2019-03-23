@@ -16,8 +16,8 @@ os:
 
 env:
   global:
-    - ELM_VERSION="0.19.0-bugfix2"
-    - ELM_TEST_VERSION="0.19.0-beta9"
+    - ELM_VERSION="0.19.0-bugfix6"
+    - ELM_TEST_VERSION="0.19.0-rev6"
     - SYSCONFCPUS="${TRAVIS_BUILD_DIR}/sysconfcpus/bin/sysconfcpus -n 2"
     - ELM_MAKE="${TRAVIS_BUILD_DIR}/node_modules/.bin/elm make"
     - ELM_TEST="node ${TRAVIS_BUILD_DIR}/node_modules/elm-test/bin/elm-test --compiler ${ELM_MAKE}"
