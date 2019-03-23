@@ -4,8 +4,8 @@ module QRCode.Encode.Alphanumeric exposing
     )
 
 import Dict exposing (Dict)
+import List.Extra as List
 import QRCode.Error exposing (Error(..))
-import QRCode.Helpers exposing (breakStr, listResult)
 import Regex exposing (Regex)
 
 
@@ -28,26 +28,23 @@ onlyAlphanumeric =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    listResult toBinary [] (breakStr 2 str)
+    List.foldl (Result.map2 (::))
+        (Ok [])
+        (List.map toBinary
+            (List.greedyGroupsOf 2 (String.toList str))
+        )
 
 
-toBinary : String -> Result Error ( Int, Int )
-toBinary str =
-    case String.toList str of
+toBinary : List Char -> Result Error ( Int, Int )
+toBinary chars =
+    case chars of
         firstChar :: secondChar :: [] ->
-            Result.map (\a -> ( a, 11 ))
-                (Result.map
-                    (\( first, second ) ->
-                        (first * 45) + second
-                    )
-                    (Result.andThen
-                        (\firstCode ->
-                            Result.map (\b -> ( firstCode, b ))
-                                (toAlphanumericCode secondChar)
-                        )
-                        (toAlphanumericCode firstChar)
-                    )
+            Result.map2
+                (\firstCode secondCode ->
+                    ( (firstCode * 45) + secondCode, 11 )
                 )
+                (toAlphanumericCode firstChar)
+                (toAlphanumericCode secondChar)
 
         char :: [] ->
             Result.map (\a -> ( a, 6 ))

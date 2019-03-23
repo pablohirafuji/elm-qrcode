@@ -10,8 +10,8 @@ import Regex exposing (Regex)
 
 isValid : String -> Bool
 isValid input =
-    Maybe.map (\r -> Regex.contains r input) only8Bit
-        |> Maybe.withDefault False
+    Maybe.withDefault False
+        (Maybe.map (\r -> Regex.contains r input) only8Bit)
 
 
 
@@ -27,18 +27,15 @@ only8Bit =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    encodeHelp str []
-        |> Result.map (List.map (\a -> ( a, 8 )))
+    Result.map (List.map (\a -> ( a, 8 )))
+        (encodeHelp str [])
 
 
 encodeHelp : String -> List Int -> Result Error (List Int)
 encodeHelp str bytes =
     case String.uncons str of
         Just ( char, strTail ) ->
-            Char.toCode char
-                |> (\a -> (::) a bytes)
-                |> encodeHelp strTail
+            encodeHelp strTail (Char.toCode char :: bytes)
 
         Nothing ->
-            List.reverse bytes
-                |> Result.Ok
+            Result.Ok (List.reverse bytes)
