@@ -10,8 +10,8 @@ import Regex exposing (Regex)
 
 isValid : String -> Bool
 isValid input =
-    Maybe.map (\r -> Regex.contains r input) onlyNumber
-        |> Maybe.withDefault False
+    Maybe.withDefault False
+        (Maybe.map (\r -> Regex.contains r input) onlyNumber)
 
 
 
@@ -27,15 +27,13 @@ onlyNumber =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    breakStr 3 str
-        |> listResult encodeHelp []
+    listResult encodeHelp [] (breakStr 3 str)
 
 
 encodeHelp : String -> Result Error ( Int, Int )
 encodeHelp str =
-    String.toInt str
-        |> Maybe.map (\a -> ( a, numericLength str ))
-        |> Result.fromMaybe InvalidNumericChar
+    Result.fromMaybe InvalidNumericChar
+        (Maybe.map (\a -> ( a, numericLength str )) (String.toInt str))
 
 
 numericLength : String -> Int

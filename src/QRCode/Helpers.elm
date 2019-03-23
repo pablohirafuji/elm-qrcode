@@ -9,9 +9,8 @@ listResult : (a -> Result x b) -> List b -> List a -> Result x (List b)
 listResult fun listb lista =
     case lista of
         head :: tail ->
-            fun head
-                |> Result.map (\r -> r :: listb)
-                |> Result.andThen (\a -> listResult fun a tail)
+            Result.andThen (\a -> listResult fun a tail)
+                (Result.map (\r -> r :: listb) (fun head))
 
         [] ->
             Result.Ok (List.reverse listb)
