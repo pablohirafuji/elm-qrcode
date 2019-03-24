@@ -123,7 +123,7 @@ view_ { ecLevel, renderer, finalMessage } =
     [ node "style" [] [ text stylesheet ]
     , h1 []
         [ text "Elm QR Code "
-        , small [] [ text "v3.1.0" ]
+        , small [] [ text "v3.1.1" ]
         ]
     , p [ class "subheading" ]
         [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
@@ -216,11 +216,11 @@ qrCodeView message ecLevel renderer =
                         div []
                             [ p []
                                 [ text "An error occured while encoding to QRCode: "
-                                , i [] [ text (errorToString e) ]
+                                , b [] [ text (errorToString e) ]
                                 ]
                             , p []
                                 [ text "If the error is not "
-                                , i [] [ text "InputLengthOverflow" ]
+                                , b [] [ text "InputLengthOverflow" ]
                                 , text " then, please, report at "
                                 , a [ href "https://github.com/pablohirafuji/elm-qrcode/issues" ] [ text "https://github.com/pablohirafuji/elm-qrcode/issues" ]
                                 , text "."
