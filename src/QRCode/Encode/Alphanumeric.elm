@@ -4,15 +4,15 @@ module QRCode.Encode.Alphanumeric exposing
     )
 
 import Dict exposing (Dict)
+import List.Extra as List
 import QRCode.Error exposing (Error(..))
-import QRCode.Helpers exposing (breakStr, listResult)
 import Regex exposing (Regex)
 
 
 isValid : String -> Bool
 isValid input =
-    Maybe.map (\r -> Regex.contains r input) onlyAlphanumeric
-        |> Maybe.withDefault False
+    Maybe.withDefault False
+        (Maybe.map (\r -> Regex.contains r input) onlyAlphanumeric)
 
 
 
@@ -28,29 +28,27 @@ onlyAlphanumeric =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    breakStr 2 str
-        |> listResult toBinary []
+    List.foldr (Result.map2 (::))
+        (Ok [])
+        (List.map toBinary
+            (List.greedyGroupsOf 2 (String.toList str))
+        )
 
 
-toBinary : String -> Result Error ( Int, Int )
-toBinary str =
-    case String.toList str of
+toBinary : List Char -> Result Error ( Int, Int )
+toBinary chars =
+    case chars of
         firstChar :: secondChar :: [] ->
-            toAlphanumericCode firstChar
-                |> Result.andThen
-                    (\firstCode ->
-                        toAlphanumericCode secondChar
-                            |> Result.map (\b -> ( firstCode, b ))
-                    )
-                |> Result.map
-                    (\( first, second ) ->
-                        (first * 45) + second
-                    )
-                |> Result.map (\a -> ( a, 11 ))
+            Result.map2
+                (\firstCode secondCode ->
+                    ( (firstCode * 45) + secondCode, 11 )
+                )
+                (toAlphanumericCode firstChar)
+                (toAlphanumericCode secondChar)
 
         char :: [] ->
-            toAlphanumericCode char
-                |> Result.map (\a -> ( a, 6 ))
+            Result.map (\a -> ( a, 6 ))
+                (toAlphanumericCode char)
 
         _ ->
             Result.Err InvalidAlphanumericChar
@@ -58,56 +56,56 @@ toBinary str =
 
 toAlphanumericCode : Char -> Result Error Int
 toAlphanumericCode char =
-    Dict.get char alphanumericCodes
-        |> Result.fromMaybe InvalidAlphanumericChar
+    Result.fromMaybe InvalidAlphanumericChar
+        (Dict.get char alphanumericCodes)
 
 
 alphanumericCodes : Dict Char Int
 alphanumericCodes =
-    [ ( '0', 0 )
-    , ( '1', 1 )
-    , ( '2', 2 )
-    , ( '3', 3 )
-    , ( '4', 4 )
-    , ( '5', 5 )
-    , ( '6', 6 )
-    , ( '7', 7 )
-    , ( '8', 8 )
-    , ( '9', 9 )
-    , ( 'A', 10 )
-    , ( 'B', 11 )
-    , ( 'C', 12 )
-    , ( 'D', 13 )
-    , ( 'E', 14 )
-    , ( 'F', 15 )
-    , ( 'G', 16 )
-    , ( 'H', 17 )
-    , ( 'I', 18 )
-    , ( 'J', 19 )
-    , ( 'K', 20 )
-    , ( 'L', 21 )
-    , ( 'M', 22 )
-    , ( 'N', 23 )
-    , ( 'O', 24 )
-    , ( 'P', 25 )
-    , ( 'Q', 26 )
-    , ( 'R', 27 )
-    , ( 'S', 28 )
-    , ( 'T', 29 )
-    , ( 'U', 30 )
-    , ( 'V', 31 )
-    , ( 'W', 32 )
-    , ( 'X', 33 )
-    , ( 'Y', 34 )
-    , ( 'Z', 35 )
-    , ( ' ', 36 )
-    , ( '$', 37 )
-    , ( '%', 38 )
-    , ( '*', 39 )
-    , ( '+', 40 )
-    , ( '-', 41 )
-    , ( '.', 42 )
-    , ( '/', 43 )
-    , ( ':', 44 )
-    ]
-        |> Dict.fromList
+    Dict.fromList
+        [ ( '0', 0 )
+        , ( '1', 1 )
+        , ( '2', 2 )
+        , ( '3', 3 )
+        , ( '4', 4 )
+        , ( '5', 5 )
+        , ( '6', 6 )
+        , ( '7', 7 )
+        , ( '8', 8 )
+        , ( '9', 9 )
+        , ( 'A', 10 )
+        , ( 'B', 11 )
+        , ( 'C', 12 )
+        , ( 'D', 13 )
+        , ( 'E', 14 )
+        , ( 'F', 15 )
+        , ( 'G', 16 )
+        , ( 'H', 17 )
+        , ( 'I', 18 )
+        , ( 'J', 19 )
+        , ( 'K', 20 )
+        , ( 'L', 21 )
+        , ( 'M', 22 )
+        , ( 'N', 23 )
+        , ( 'O', 24 )
+        , ( 'P', 25 )
+        , ( 'Q', 26 )
+        , ( 'R', 27 )
+        , ( 'S', 28 )
+        , ( 'T', 29 )
+        , ( 'U', 30 )
+        , ( 'V', 31 )
+        , ( 'W', 32 )
+        , ( 'X', 33 )
+        , ( 'Y', 34 )
+        , ( 'Z', 35 )
+        , ( ' ', 36 )
+        , ( '$', 37 )
+        , ( '%', 38 )
+        , ( '*', 39 )
+        , ( '+', 40 )
+        , ( '-', 41 )
+        , ( '.', 42 )
+        , ( '/', 43 )
+        , ( ':', 44 )
+        ]

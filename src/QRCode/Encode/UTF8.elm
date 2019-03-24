@@ -7,58 +7,57 @@ import QRCode.Error exposing (Error(..))
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    encodeHelp str []
-        |> Result.map (List.map (\a -> ( a, 8 )))
+    Result.map (List.map (\a -> ( a, 8 )))
+        (encodeHelp (String.toList str) [])
 
 
-encodeHelp : String -> List Int -> Result Error (List Int)
-encodeHelp str list =
-    case String.uncons str of
-        Just ( char, strTail ) ->
-            Char.toCode char
-                |> utf8ToByte list strTail
+encodeHelp : List Char -> List Int -> Result Error (List Int)
+encodeHelp chars list =
+    case chars of
+        char :: charsTail ->
+            utf8ToByte list charsTail (Char.toCode char)
 
-        Nothing ->
-            List.reverse list
-                |> Result.Ok
+        [] ->
+            Result.Ok (List.reverse list)
 
 
 
 -- From: http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
 
 
-utf8ToByte : List Int -> String -> Int -> Result Error (List Int)
+utf8ToByte : List Int -> List Char -> Int -> Result Error (List Int)
 utf8ToByte list remainStr charCode =
     if charCode < 128 then
-        charCode
-            :: list
-            |> encodeHelp remainStr
+        encodeHelp remainStr (charCode :: list)
 
     else if charCode < 2048 then
-        list
-            |> (::) (Bit.or 192 (shiftRightBy 6 charCode))
-            |> (::) (Bit.or 128 (and63 charCode))
-            |> encodeHelp remainStr
+        encodeHelp remainStr
+            (Bit.or 128 (and63 charCode)
+                :: Bit.or 192 (shiftRightBy 6 charCode)
+                :: list
+            )
 
     else if charCode < 55296 || charCode >= 57344 then
-        list
-            |> (::) (Bit.or 224 (shiftRightBy 12 charCode))
-            |> (::) (Bit.or 128 (and63 (shiftRightBy 6 charCode)))
-            |> (::) (Bit.or 128 (and63 charCode))
-            |> encodeHelp remainStr
+        encodeHelp remainStr
+            (Bit.or 128 (and63 charCode)
+                :: Bit.or 128 (and63 (shiftRightBy 6 charCode))
+                :: Bit.or 224 (shiftRightBy 12 charCode)
+                :: list
+            )
 
     else
-        case String.uncons remainStr of
-            Just ( char, strTail ) ->
+        case remainStr of
+            char :: strTail ->
                 let
                     nextCharCode =
                         Char.toCode char
 
                     charC =
-                        Bit.and 1023 charCode
-                            |> Bit.shiftLeftBy 10
-                            |> Bit.or (Bit.and 1023 nextCharCode)
-                            |> (+) 65536
+                        65536
+                            + Bit.or (Bit.and 1023 nextCharCode)
+                                (Bit.shiftLeftBy 10
+                                    (Bit.and 1023 charCode)
+                                )
 
                     byte1 =
                         Bit.or 240 (shiftRightBy 18 charC)
@@ -72,14 +71,15 @@ utf8ToByte list remainStr charCode =
                     byte4 =
                         Bit.or 128 (and63 charC)
                 in
-                byte4
-                    :: byte3
-                    :: byte2
-                    :: byte1
-                    :: list
-                    |> encodeHelp strTail
+                encodeHelp strTail
+                    (byte4
+                        :: byte3
+                        :: byte2
+                        :: byte1
+                        :: list
+                    )
 
-            Nothing ->
+            [] ->
                 Result.Err InvalidUTF8Char
 
 

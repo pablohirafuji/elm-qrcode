@@ -60,8 +60,19 @@ all =
                             , "00101100"
                             , "01010101"
                             ]
+            , test "All Numeric" <|
+                \() ->
+                    Encode.encode "1234567890" ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Expect.equal (Result.Ok "Numeric")
+            , test "Giant Numeric" <|
+                \() ->
+                    Encode.encode (String.repeat 1000 "1234567890") ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Result.mapError Debug.toString
+                        |> Expect.equal (Result.Err "InputLengthOverflow")
 
-            -- From http://www.thonky.com/qr-code-tutorial/data-encoding
+            --From http://www.thonky.com/qr-code-tutorial/data-encoding
             , test "All caps" <|
                 \() ->
                     Alphanumeric.encode "HELLO WORLD"
@@ -73,11 +84,40 @@ all =
                             )
                         |> String.concat
                         |> Expect.equal "0110000101101111000110100010111001011011100010011010100001101"
-            , test "Giant Alphanumeric" <|
+            , test "All Alphanumerics" <|
                 \() ->
                     Encode.encode "123456789ABCDEFGHIJKLMNOPQRSTUVWXY $%*+-./:" ECLevel.L
                         |> Result.map (Tuple.first >> .mode >> Debug.toString)
                         |> Expect.equal (Result.Ok "Alphanumeric")
+            , test "Giant Alphanumeric" <|
+                \() ->
+                    Encode.encode (String.repeat 100 "123456789ABCDEFGHIJKLMNOPQRSTUVWXY $%*+-./:") ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Result.mapError Debug.toString
+                        |> Expect.equal (Result.Err "InputLengthOverflow")
+            , test "Byte encoder" <|
+                \() ->
+                    Encode.encode "coração" ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Expect.equal (Result.Ok "Byte")
+            , test "Giant Byte" <|
+                \() ->
+                    Encode.encode (String.repeat 500 "Coração") ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Result.mapError Debug.toString
+                        |> Expect.equal (Result.Err "InputLengthOverflow")
+            , test "UTF8 encoder" <|
+                \() ->
+                    Encode.encode " © ® ™ • ½ ¼ ¾ ⅓ ⅔" ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Expect.equal (Result.Ok "UTF8")
+
+            --, test "Giant UTF8" <|
+            --    \() ->
+            --        Encode.encode (String.repeat 150 " © ® ™ • ½ ¼ ¾ ⅓ ⅔") ECLevel.L
+            --            |> Result.map (Tuple.first >> .mode >> Debug.toString)
+            --            |> Result.mapError Debug.toString
+            --            |> Expect.equal (Result.Err "InputLengthOverflow")
             , fuzz string "Fuzz ECLevel M" <|
                 \rndStr ->
                     Encode.encode rndStr ECLevel.M

@@ -70,11 +70,12 @@ into a result [Error](#Error) or a [QRCode](#QRCode).
 -}
 encodeWith : ErrorCorrection -> String -> Result Error QRCode
 encodeWith ecLevel input =
-    convertEC ecLevel
-        |> Encode.encode input
-        |> Result.andThen Matrix.apply
-        |> Result.map QRCode
-        |> Result.mapError convertError
+    Result.mapError convertError
+        (Result.map QRCode
+            (Result.andThen Matrix.apply
+                (Encode.encode input (convertEC ecLevel))
+            )
+        )
 
 
 convertEC : ErrorCorrection -> ECLevel

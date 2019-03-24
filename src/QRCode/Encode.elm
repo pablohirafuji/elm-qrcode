@@ -21,13 +21,17 @@ encode inputStr ecLevel =
         mode =
             selectMode inputStr
     in
-    inputStr
-        |> encoder mode
-        |> Result.andThen (selectVersion inputStr ecLevel mode)
-        |> Result.map addInfoAndFinalBits
-        |> Result.andThen toBlocks
-        |> Result.andThen getErrorCorrection
-        |> Result.map concatTranspose
+    Result.map concatTranspose
+        (Result.andThen getErrorCorrection
+            (Result.andThen toBlocks
+                (Result.map addInfoAndFinalBits
+                    (Result.andThen
+                        (selectVersion inputStr ecLevel mode)
+                        (encoder mode inputStr)
+                    )
+                )
+            )
+        )
 
 
 encoder : Mode -> (String -> Result Error (List ( Int, Int )))
@@ -109,20 +113,19 @@ selectVersion : String -> ECLevel -> Mode -> List ( Int, Int ) -> Result Error (
 selectVersion inputStr ecLevel mode encodedStr =
     let
         partialBitsCount =
-            List.foldl (\a b -> Tuple.second a + b) 0 encodedStr
-                |> (+) 4
+            4 + List.foldl (\a b -> Tuple.second a + b) 0 encodedStr
 
         -- Add mode indicator bits
     in
-    partialBitsCount
-        |> getVersion ecLevel mode
-        |> Result.map
+    Result.map (\b -> ( encodedStr, b ))
+        (Result.map
             (versionToModel inputStr
                 ecLevel
                 mode
                 partialBitsCount
             )
-        |> Result.map (\b -> ( encodedStr, b ))
+            (getVersion ecLevel mode partialBitsCount)
+        )
 
 
 versionToModel : String -> ECLevel -> Mode -> Int -> GroupInfo -> Model
@@ -139,18 +142,22 @@ versionToModel inputStr ecLevel mode partialBitsCount groupInfo =
 
 getVersion : ECLevel -> Mode -> Int -> Result Error GroupInfo
 getVersion ecLevel mode dataLength =
-    getGroupData ecLevel
-        |> List.filter (filterCapacity mode dataLength)
-        |> List.sortBy .capacity
-        |> List.head
-        |> Result.fromMaybe InputLengthOverflow
+    Result.fromMaybe InputLengthOverflow
+        (List.head
+            (List.sortBy .capacity
+                (List.filter (filterCapacity mode dataLength)
+                    (getGroupData ecLevel)
+                )
+            )
+        )
 
 
 filterCapacity : Mode -> Int -> GroupInfo -> Bool
 filterCapacity mode dataLength { version, capacity } =
-    charCountIndicatorLength mode version
+    (charCountIndicatorLength mode version
         + dataLength
-        |> (\length -> length <= capacity)
+    )
+        <= capacity
 
 
 
@@ -161,13 +168,18 @@ filterCapacity mode dataLength { version, capacity } =
 
 addInfoAndFinalBits : ( List ( Int, Int ), Model ) -> ( Model, List Int )
 addInfoAndFinalBits ( bits, model ) =
-    bits
-        |> (::) (charCountIndicator model bits)
-        |> (::) ( modeIndicator model.mode, 4 )
-        |> addTerminator model.groupInfo.capacity model.bitsCount
-        |> bitsToBytes
-        |> addFiller model.groupInfo.capacity
-        |> (\b -> ( model, b ))
+    ( model
+    , addFiller model.groupInfo.capacity
+        (bitsToBytes
+            (addTerminator model.groupInfo.capacity
+                model.bitsCount
+                (( modeIndicator model.mode, 4 )
+                    :: charCountIndicator model bits
+                    :: bits
+                )
+            )
+        )
+    )
 
 
 charCountIndicator : Model -> List ( Int, Int ) -> ( Int, Int )
@@ -235,12 +247,7 @@ charCountIndicatorLength mode version =
 
 addTerminator : Int -> Int -> List ( Int, Int ) -> List ( Int, Int )
 addTerminator capacity bitsCount bits =
-    capacity
-        - bitsCount
-        |> min 4
-        |> (\b -> ( 0, b ))
-        |> (\a -> (::) a [])
-        |> (++) bits
+    bits ++ [ ( 0, min 4 (capacity - bitsCount) ) ]
 
 
 bitsToBytes : List ( Int, Int ) -> List Int
@@ -252,17 +259,18 @@ bitsToBytes1 : List ( Int, Int ) -> ( ( Int, Int ), List Int ) -> List Int
 bitsToBytes1 bits ( ( remBits, remLength ), bytes ) =
     case bits of
         head :: tail ->
-            bitsToBytes2 head ( ( remBits, remLength ), bytes )
-                |> bitsToBytes1 tail
+            bitsToBytes1 tail
+                (bitsToBytes2 head ( ( remBits, remLength ), bytes ))
 
         [] ->
             if remLength == 0 then
                 List.reverse bytes
 
             else
-                Bit.shiftLeftBy (8 - remLength) remBits
-                    |> (\a -> (::) a bytes)
-                    |> List.reverse
+                List.reverse
+                    (Bit.shiftLeftBy (8 - remLength) remBits
+                        :: bytes
+                    )
 
 
 bitsToBytes2 : ( Int, Int ) -> ( ( Int, Int ), List Int ) -> ( ( Int, Int ), List Int )
@@ -272,8 +280,8 @@ bitsToBytes2 ( curBits, curLength ) ( ( remBits, remLength ), bytes ) =
             curLength + remLength
 
         bitsSum =
-            Bit.shiftLeftBy curLength remBits
-                |> Bit.or curBits
+            Bit.or curBits
+                (Bit.shiftLeftBy curLength remBits)
     in
     bitsToBytes3 ( ( bitsSum, lengthSum ), bytes )
 
@@ -286,17 +294,16 @@ bitsToBytes3 ( ( bits, length ), bytes ) =
                 length - 8
 
             remBits =
-                Bit.shiftLeftBy remLength 1
-                    |> (\a -> (-) a 1)
-                    |> Bit.and bits
+                Bit.and bits
+                    (Bit.shiftLeftBy remLength 1 - 1)
 
             byte =
                 Bit.shiftRightBy remLength bits
         in
-        ( ( remBits, remLength )
-        , byte :: bytes
-        )
-            |> bitsToBytes3
+        bitsToBytes3
+            ( ( remBits, remLength )
+            , byte :: bytes
+            )
 
     else
         ( ( bits, length )
@@ -309,17 +316,18 @@ addFiller capacity bytes =
     let
         fillerLength =
             (capacity // 8) - List.length bytes
-    in
-    [ firstFillerByte, secondFillerByte ]
-        |> List.repeat (fillerLength // 2)
-        |> List.concat
-        |> (if modBy 2 fillerLength == 0 then
-                identity
 
-            else
-                \a -> (++) a [ firstFillerByte ]
-           )
-        |> (++) bytes
+        ns =
+            List.concat
+                (List.repeat (fillerLength // 2)
+                    [ firstFillerByte, secondFillerByte ]
+                )
+    in
+    if modBy 2 fillerLength == 0 then
+        bytes ++ ns
+
+    else
+        bytes ++ ns ++ [ firstFillerByte ]
 
 
 firstFillerByte : Int
@@ -342,15 +350,18 @@ toBlocks : ( Model, List a ) -> Result Error ( Model, List (List a) )
 toBlocks ( { groupInfo } as model, byteList ) =
     case groupInfo.maybeGroup2 of
         Just group2 ->
-            breakList False groupInfo.group1 ( byteList, [] )
-                |> Result.andThen (breakList True group2)
-                |> Result.map (Tuple.second >> List.reverse)
-                |> Result.map (\b -> ( model, b ))
+            Result.map (\b -> ( model, b ))
+                (Result.map (Tuple.second >> List.reverse)
+                    (Result.andThen (breakList True group2)
+                        (breakList False groupInfo.group1 ( byteList, [] ))
+                    )
+                )
 
         Nothing ->
-            breakList True groupInfo.group1 ( byteList, [] )
-                |> Result.map (Tuple.second >> List.reverse)
-                |> Result.map (\b -> ( model, b ))
+            Result.map (\b -> ( model, b ))
+                (Result.map (Tuple.second >> List.reverse)
+                    (breakList True groupInfo.group1 ( byteList, [] ))
+                )
 
 
 breakList : Bool -> ( Int, Int ) -> ( List a, List (List a) ) -> Result Error ( List a, List (List a) )
@@ -363,8 +374,9 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
             remainList =
                 List.drop itemCount byteList
         in
-        ( remainList, block :: progress )
-            |> breakList checkFinish ( times - 1, itemCount )
+        breakList checkFinish
+            ( times - 1, itemCount )
+            ( remainList, block :: progress )
 
     else if checkFinish && List.length byteList > 0 then
         Result.Err InputLengthOverflow
@@ -381,8 +393,8 @@ breakList checkFinish ( times, itemCount ) ( byteList, progress ) =
 
 getErrorCorrection : ( Model, List (List Int) ) -> Result Error ( Model, List (List Int), List (List Int) )
 getErrorCorrection ( model, dataBlocks ) =
-    ErrorCorrection.get model.groupInfo.ecPerBlock dataBlocks
-        |> Result.map (\c -> ( model, dataBlocks, c ))
+    Result.map (\c -> ( model, dataBlocks, c ))
+        (ErrorCorrection.get model.groupInfo.ecPerBlock dataBlocks)
 
 
 
@@ -393,7 +405,6 @@ getErrorCorrection ( model, dataBlocks ) =
 
 concatTranspose : ( Model, List (List Int), List (List Int) ) -> ( Model, List Int )
 concatTranspose ( model, dataBlocks, ecBlocks ) =
-    transpose ecBlocks
-        |> (++) (transpose dataBlocks)
-        |> List.concat
-        |> (\b -> ( model, b ))
+    ( model
+    , List.concat (transpose dataBlocks ++ transpose ecBlocks)
+    )
