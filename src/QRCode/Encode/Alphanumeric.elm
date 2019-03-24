@@ -28,7 +28,7 @@ onlyAlphanumeric =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    List.foldl (Result.map2 (::))
+    List.foldr (Result.map2 (::))
         (Ok [])
         (List.map toBinary
             (List.greedyGroupsOf 2 (String.toList str))

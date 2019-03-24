@@ -3,6 +3,7 @@ module QRCode.Encode.Numeric exposing
     , isValid
     )
 
+import List.Extra as List
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (breakStr, listResult)
 import Regex exposing (Regex)
@@ -27,13 +28,23 @@ onlyNumber =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    listResult encodeHelp [] (breakStr 3 str)
+    List.foldr (Result.map2 (::))
+        (Ok [])
+        (List.map encodeHelp
+            (List.greedyGroupsOf 3 (String.toList str))
+        )
 
 
-encodeHelp : String -> Result Error ( Int, Int )
-encodeHelp str =
+encodeHelp : List Char -> Result Error ( Int, Int )
+encodeHelp chars =
+    let
+        str =
+            String.fromList chars
+    in
     Result.fromMaybe InvalidNumericChar
-        (Maybe.map (\a -> ( a, numericLength str )) (String.toInt str))
+        (Maybe.map (\a -> ( a, numericLength str ))
+            (String.toInt str)
+        )
 
 
 numericLength : String -> Int

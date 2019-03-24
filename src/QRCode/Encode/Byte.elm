@@ -27,15 +27,4 @@ only8Bit =
 
 encode : String -> Result Error (List ( Int, Int ))
 encode str =
-    Result.map (List.map (\a -> ( a, 8 )))
-        (encodeHelp str [])
-
-
-encodeHelp : String -> List Int -> Result Error (List Int)
-encodeHelp str bytes =
-    case String.uncons str of
-        Just ( char, strTail ) ->
-            encodeHelp strTail (Char.toCode char :: bytes)
-
-        Nothing ->
-            Result.Ok (List.reverse bytes)
+    Ok (List.map (\a -> ( Char.toCode a, 8 )) (String.toList str))
