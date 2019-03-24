@@ -1,5 +1,11 @@
 # Changelog
 
+
+### 3.1.1
+
+Removed pipelines from the code because of [this issue](https://github.com/elm/compiler/issues/1770).
+
+
 ### 3.1.0
 
 Add `toSvgWithoutQuietZone` rendering option (Thanks @ahstro for the idea!)
