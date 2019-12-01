@@ -1,7 +1,7 @@
 module QRCode exposing
     ( QRCode, ErrorCorrection(..)
     , encode, encodeWith
-    , toSvg, toSvgWithoutQuietZone, toString
+    , toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
     , Error(..)
     )
 
@@ -17,7 +17,7 @@ module QRCode exposing
 
 # Rendering
 
-@docs toSvg, toSvgWithoutQuietZone, toString
+@docs toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
 
 
 # Error
@@ -27,10 +27,12 @@ module QRCode exposing
 -}
 
 import Html exposing (Html)
+import Image exposing (Image)
 import QRCode.ECLevel as ECLevel exposing (ECLevel)
 import QRCode.Encode as Encode
 import QRCode.Error as Error
 import QRCode.Matrix as Matrix exposing (Model)
+import QRCode.Render.Raster as Raster
 import QRCode.Render.String as String_
 import QRCode.Render.Svg as Svg
 
@@ -156,7 +158,82 @@ toString (QRCode qrCode) =
     String_.view qrCode
 
 
-{-| Possible enconding errors.
+{-| Transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image). You can transform the Image into a [PNG](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#toPngUrl) or [BMP](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#toBmpUrl).
+
+    import Html
+    import Html.Attribute
+    import Image
+    import QRCode
+
+    viewQRCode : String -> Html msg
+    viewQRCode message =
+        QRCode.encode message
+            |> Result.map
+                (\qrCode ->
+                    Html.img
+                        [ QRCode.toImage qrCode
+                            |> Image.toPngUrl
+                            |> Html.Attribute.src
+                        ]
+                        []
+                )
+            |> Result.withDefault
+                (Html.text "Error while encoding to QRCode.")
+
+**Note**: You must install the [`justgook/elm-image`](https://package.elm-lang.org/packages/justgook/elm-image/latest) package in order to use the functions to convert the `Image` type to something else:
+
+```sh
+elm install "justgook/elm-image"
+```
+
+-}
+toImage : QRCode -> Image
+toImage =
+    toImageWithOptions defaultImageOptions
+
+
+{-| Transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image) with an [ImageOptions](#ImageOptions).
+-}
+toImageWithOptions : ImageOptions -> QRCode -> Image
+toImageWithOptions config (QRCode qrCode) =
+    Raster.toImageWithOptions config qrCode
+
+
+{-| Available options to transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image) with [toImageWithOptions](#toImageWithOptions).
+
+  - `moduleSize` is the size of the module (the dark square) in px;
+  - `moduleColor` and `emptyColor` expects an `Int` as `0xRRGGBBAA`;
+  - `quietZoneSize` is the number of modules the [quiet zone](https://en.wikipedia.org/wiki/QR_code#Standards) should have.
+
+-}
+type alias ImageOptions =
+    { moduleSize : Int
+    , moduleColor : Int
+    , emptyColor : Int
+    , quietZoneSize : Int
+    }
+
+
+{-| Default options used by [toImage](#toImage).
+
+    defaultImageOptions =
+        { moduleSize = 5
+        , moduleColor = 0xFF
+        , emptyColor = 0xFFFFFFFF
+        , quietZoneSize = 4
+        }
+
+-}
+defaultImageOptions : ImageOptions
+defaultImageOptions =
+    { moduleSize = 5
+    , moduleColor = 0xFF
+    , emptyColor = 0xFFFFFFFF
+    , quietZoneSize = 4
+    }
+
+
+{-| Possible encoding errors.
 -}
 type Error
     = AlignmentPatternNotFound

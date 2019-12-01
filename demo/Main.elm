@@ -1,13 +1,14 @@
-module Main exposing (Model, Msg(..), Renderer(..), errorToString, init, initModel, main, onUrlChange, qrCodeRender, qrCodeView, toHtml, update, view, view_)
+module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation exposing (Key)
 import Html exposing (..)
-import Html.Attributes exposing (class, href, selected, style, title, type_)
+import Html.Attributes exposing (class, href, selected, src, style, title, type_)
 import Html.Events exposing (on, onInput, onSubmit, targetValue)
 import Html.Lazy exposing (lazy3)
-import Json.Decode as Decode exposing (Value)
-import Json.Encode as Encode
+import Image exposing (Image)
+import Json.Decode as JsonD exposing (Value)
+import Json.Encode as JsonE
 import QRCode exposing (Error(..), ErrorCorrection(..), QRCode)
 import Url exposing (Url)
 
@@ -50,7 +51,7 @@ type alias Model =
 
 initModel : Maybe String -> Model
 initModel mS =
-    { message = ""
+    { message = Maybe.withDefault "Elm QR Code" mS
     , ecLevel = Quartile
     , renderer = Svg
     , finalMessage = Maybe.withDefault "Elm QR Code" mS
@@ -60,6 +61,8 @@ initModel mS =
 type Renderer
     = Svg
     | String_
+    | Png
+    | Bmp
 
 
 
@@ -119,11 +122,11 @@ view model =
 
 
 view_ : Model -> List (Html Msg)
-view_ { ecLevel, renderer, finalMessage } =
+view_ { ecLevel, renderer, finalMessage, message } =
     [ node "style" [] [ text stylesheet ]
     , h1 []
         [ text "Elm QR Code "
-        , small [] [ text "v3.1.1" ]
+        , small [] [ text "v3.2.0" ]
         ]
     , p [ class "subheading" ]
         [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
@@ -138,14 +141,13 @@ view_ { ecLevel, renderer, finalMessage } =
     , form [ onSubmit Render ]
         [ input
             [ onInput UpdateMessage
-            , Html.Attributes.property "defaultValue"
-                (Encode.string finalMessage)
+            , Html.Attributes.value message
             ]
             []
         , select
             [ title "Error Correction Level"
             , targetValue
-                |> Decode.map
+                |> JsonD.map
                     (\str ->
                         case str of
                             "Low" ->
@@ -160,7 +162,7 @@ view_ { ecLevel, renderer, finalMessage } =
                             _ ->
                                 High
                     )
-                |> Decode.map ChangeErrorCorrection
+                |> JsonD.map ChangeErrorCorrection
                 |> on "change"
             ]
             [ option
@@ -179,15 +181,25 @@ view_ { ecLevel, renderer, finalMessage } =
         , select
             [ title "Renderer"
             , targetValue
-                |> Decode.map
+                |> JsonD.map
                     (\str ->
-                        if str == "SVG" then
-                            Svg
+                        case str of
+                            "SVG" ->
+                                Svg
 
-                        else
-                            String_
+                            "String" ->
+                                String_
+
+                            "PNG" ->
+                                Png
+
+                            "BMP" ->
+                                Bmp
+
+                            _ ->
+                                Svg
                     )
-                |> Decode.map ChangeRenderer
+                |> JsonD.map ChangeRenderer
                 |> on "change"
             ]
             [ option
@@ -196,6 +208,12 @@ view_ { ecLevel, renderer, finalMessage } =
             , option
                 [ selected (renderer == String_) ]
                 [ text "String" ]
+            , option
+                [ selected (renderer == Png) ]
+                [ text "PNG" ]
+            , option
+                [ selected (renderer == Bmp) ]
+                [ text "BMP" ]
             ]
         , button [ type_ "submit" ] [ text "Render" ]
         ]
@@ -206,7 +224,7 @@ view_ { ecLevel, renderer, finalMessage } =
 qrCodeView : String -> ErrorCorrection -> Renderer -> Html msg
 qrCodeView message ecLevel renderer =
     QRCode.encodeWith ecLevel message
-        |> qrCodeRender renderer
+        |> Result.map (qrCodeRender renderer)
         |> (\n ->
                 case n of
                     Ok a ->
@@ -257,26 +275,39 @@ errorToString e =
             "InputLengthOverflow"
 
 
-qrCodeRender : Renderer -> Result Error QRCode -> Result Error (Html msg)
-qrCodeRender renderer =
+qrCodeRender : Renderer -> QRCode -> Html msg
+qrCodeRender renderer qrCode =
     case renderer of
         Svg ->
-            Result.map QRCode.toSvg
+            QRCode.toSvg qrCode
 
         String_ ->
-            Result.map (QRCode.toString >> toHtml)
+            Html.pre
+                [ style "line-height" "0.6"
+                , style "background" "white"
+                , style "color" "black"
+                , style "padding" "20px"
+                , style "letter-spacing" "-0.5px"
+                ]
+                [ Html.code []
+                    [ Html.text (QRCode.toString qrCode) ]
+                ]
 
+        Png ->
+            Html.img
+                [ QRCode.toImage qrCode
+                    |> Image.toPngUrl
+                    |> src
+                ]
+                []
 
-toHtml : String -> Html msg
-toHtml qrCodeStr =
-    Html.pre
-        [ style "line-height" "0.6"
-        , style "background" "white"
-        , style "color" "black"
-        , style "padding" "20px"
-        , style "letter-spacing" "-0.5px"
-        ]
-        [ Html.code [] [ Html.text qrCodeStr ] ]
+        Bmp ->
+            Html.img
+                [ QRCode.toImage qrCode
+                    |> Image.toBmpUrl
+                    |> src
+                ]
+                []
 
 
 stylesheet : String

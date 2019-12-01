@@ -1,9 +1,19 @@
 # Changelog
 
 
+### 3.2.0
+
+Use https://package.elm-lang.org/packages/justgook/elm-image/latest package to add raster images rendering option.
+
+- Add `toImage`
+- Add `toImageWithOptions`
+- Add `ImageOptions`
+- Add `defaultImageOptions`
+
+
 ### 3.1.1
 
-Removed pipelines from the code because of [this issue](https://github.com/elm/compiler/issues/1770).
+Remove pipelines from the code because of [this issue](https://github.com/elm/compiler/issues/1770).
 
 
 ### 3.1.0
