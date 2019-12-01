@@ -123,8 +123,7 @@ view model =
 
 view_ : Model -> List (Html Msg)
 view_ { ecLevel, renderer, finalMessage, message } =
-    [ node "style" [] [ text stylesheet ]
-    , h1 []
+    [ h1 []
         [ text "Elm QR Code "
         , small [] [ text "v3.2.0" ]
         ]
@@ -135,7 +134,7 @@ view_ { ecLevel, renderer, finalMessage, message } =
         , a [ href "https://github.com/pablohirafuji/elm-qrcode" ]
             [ text "GitHub" ]
         , text " / "
-        , a [ href "https://github.com/pablohirafuji/elm-qrcode/blob/master/demo/Main.elm" ]
+        , a [ href "https://github.com/pablohirafuji/elm-qrcode/blob/master/demo/src/Main.elm" ]
             [ text "Source" ]
         ]
     , form [ onSubmit Render ]
@@ -308,40 +307,3 @@ qrCodeRender renderer qrCode =
                     |> src
                 ]
                 []
-
-
-stylesheet : String
-stylesheet =
-    """
-body {
-    margin:40px auto;max-width:650px;
-    line-height:1.6;
-    font-size:18px;
-    color:#444;
-    padding:0 10px;
-    text-align: center;
-    background-color:#fafafa;
-}
-h1,h2,h3 {
-    line-height:1.2
-}
-h1 {
-    padding-bottom: 0;
-    margin-bottom: 0;
-}
-h1 small {
-    font-size: 1rem;
-    color: #888;
-}
-.subheading {
-    margin-top: 0;
-}
-#main > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-input, select, button {
-    box-sizing:border-box;
-    height: 25px;
-}"""
