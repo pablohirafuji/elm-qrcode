@@ -14,9 +14,10 @@ jobs:
 
     - name: Build
       run: |
-        npm install create-elm-app -g
         cd demo
-        elm-app build
+        npm install
+        npm run build
+        cd ..
 
     - name: Deploy
       uses: JamesIves/github-pages-deploy-action@releases/v3
