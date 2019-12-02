@@ -44,7 +44,7 @@ viewBase quietZoneSize matrix =
             )
         |> List.indexedMap (viewRow quietZoneSize)
         |> List.concat
-        |> String.join " "
+        |> String.concat
         |> Svg.Attributes.d
         |> (\d ->
                 [ Svg.path
@@ -64,7 +64,7 @@ viewBase quietZoneSize matrix =
             , height sizePx
             , viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
             , shapeRendering "crispEdges"
-            , Svg.Attributes.stroke "black"
+            , Svg.Attributes.stroke "#000"
             , Svg.Attributes.strokeWidth (String.fromInt moduleSize ++ "px")
             ]
 
@@ -87,13 +87,16 @@ toRowLines isDark ( lastRect, rowLines ) =
             ( { width = 1
               , space = 0
               }
-            , ([ "h"
-               , String.fromInt (lastRect.width * moduleSize)
+            , ([ if lastRect.width > 0 then
+                    "h" ++ String.fromInt (lastRect.width * moduleSize)
+
+                 else
+                    ""
                , "m"
                , String.fromInt (lastRect.space * moduleSize)
-               , "0"
+               , " 0"
                ]
-                |> String.join " "
+                |> String.concat
               )
                 :: rowLines
             )
@@ -106,12 +109,12 @@ toRowLines isDark ( lastRect, rowLines ) =
 
 appendLastRect : ( Rect, List String ) -> List String
 appendLastRect ( lastRect, rowLines ) =
-    ("h " ++ String.fromInt (lastRect.width * moduleSize))
+    ("h" ++ String.fromInt (lastRect.width * moduleSize))
         :: rowLines
 
 
 viewRow : Int -> Int -> List String -> List String
 viewRow quietZoneSize rowIndex rowLines =
-    "M 0"
+    "M0 "
         :: String.fromInt (rowIndex * moduleSize)
         :: rowLines
