@@ -21,3 +21,12 @@ Build the project:
 ```sh
 npm run build
 ```
+
+
+## Run standalone
+
+Remove `"../src"` at the `source-directories` entry in `elm.json` file and install the package running:
+
+```sh
+elm install pablohirafuji/qrcode
+```

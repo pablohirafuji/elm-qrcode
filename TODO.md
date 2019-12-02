@@ -1,0 +1,3 @@
+- Rename `encode` to `fromString`;
+- Change `toSvg` to something like `toSvg : List Html.Attribute -> QRCode -> Html msg` (accept custom attributes [#9](https://github.com/pablohirafuji/elm-qrcode/issues/9));
+- Decode;

@@ -1,8 +1,9 @@
 module QRCode.Render.Svg exposing (view, viewWithoutQuietZone)
 
 import Html exposing (Html)
+import List.Extra as ListE
 import QRCode.Matrix as Matrix
-import Svg exposing (rect, svg)
+import Svg exposing (svg)
 import Svg.Attributes exposing (fill, height, shapeRendering, viewBox, width, x, y)
 
 
@@ -31,36 +32,75 @@ viewBase quietZoneSize matrix =
             String.fromInt (List.length matrix * moduleSize + quietZone)
     in
     matrix
-        |> List.indexedMap
-            (\rowIndex row ->
-                List.indexedMap (moduleView quietZoneSize rowIndex) row
+        |> List.map
+            (ListE.indexedFoldl toRects ( Nothing, [] )
+                >> appendLastRect
+                >> List.reverse
             )
+        |> List.indexedMap (viewRow quietZoneSize)
         |> List.concat
-        |> List.filterMap identity
         |> svg
             [ width sizePx
             , height sizePx
             , viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
             , shapeRendering "crispEdges"
+            , fill "black"
             ]
 
 
-moduleView : Int -> Int -> Int -> Bool -> Maybe (Html msg)
-moduleView quietZoneSize rowIndex colIndex isDark =
+type alias Rect =
+    { x : Int
+    , width : Int
+    }
+
+
+toRects : Int -> Bool -> ( Maybe Rect, List Rect ) -> ( Maybe Rect, List Rect )
+toRects colIndex isDark ( maybeLastRect, rects ) =
     if isDark then
-        Just (rectView (rowIndex + quietZoneSize) (colIndex + quietZoneSize))
+        case maybeLastRect of
+            Just rect ->
+                ( Just { rect | width = rect.width + 1 }
+                , rects
+                )
+
+            Nothing ->
+                ( Just
+                    { x = colIndex
+                    , width = 1
+                    }
+                , rects
+                )
 
     else
-        Nothing
+        case maybeLastRect of
+            Just rect ->
+                ( Nothing, rect :: rects )
+
+            Nothing ->
+                ( Nothing, rects )
 
 
-rectView : Int -> Int -> Html msg
-rectView row col =
-    rect
-        [ y (String.fromInt (row * moduleSize))
-        , x (String.fromInt (col * moduleSize))
-        , width (String.fromInt moduleSize)
+appendLastRect : ( Maybe Rect, List Rect ) -> List Rect
+appendLastRect ( maybeLastRect, rects ) =
+    case maybeLastRect of
+        Just rect ->
+            rect :: rects
+
+        Nothing ->
+            rects
+
+
+viewRow : Int -> Int -> List Rect -> List (Html msg)
+viewRow quietZoneSize row rects =
+    List.map (viewRect quietZoneSize row) rects
+
+
+viewRect : Int -> Int -> Rect -> Html msg
+viewRect quietZoneSize row rect =
+    Svg.rect
+        [ y (String.fromInt ((row + quietZoneSize) * moduleSize))
+        , x (String.fromInt ((rect.x + quietZoneSize) * moduleSize))
+        , width (String.fromInt (rect.width * moduleSize))
         , height (String.fromInt moduleSize)
-        , fill "black"
         ]
         []

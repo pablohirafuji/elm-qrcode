@@ -216,7 +216,8 @@ view_ { ecLevel, renderer, finalMessage, message } =
             ]
         , button [ type_ "submit" ] [ text "Render" ]
         ]
-    , lazy3 qrCodeView finalMessage ecLevel renderer
+    , div [ class "qrcode" ]
+        [ lazy3 qrCodeView finalMessage ecLevel renderer ]
     ]
 
 
@@ -282,12 +283,7 @@ qrCodeRender renderer qrCode =
 
         String_ ->
             Html.pre
-                [ style "line-height" "0.6"
-                , style "background" "white"
-                , style "color" "black"
-                , style "padding" "20px"
-                , style "letter-spacing" "-0.5px"
-                ]
+                [ class "qrcode__string" ]
                 [ Html.code []
                     [ Html.text (QRCode.toString qrCode) ]
                 ]

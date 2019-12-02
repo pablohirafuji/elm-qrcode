@@ -22,14 +22,14 @@ jobs:
         npm install elm-test
         node node_modules/elm-test/bin/elm-test
 
-    - name: Build Demo
+    - name: Build demo
       run: |
         cd demo
         npm install
         npm run build
         cd ..
 
-    - name: Deploy
+    - name: Deploy demo
       uses: JamesIves/github-pages-deploy-action@releases/v3
       with:
         ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
