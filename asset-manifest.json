@@ -1,12 +1,12 @@
 {
-  "main.css": "elm-qrcode/static/css/main.64d75583.chunk.css",
-  "main.js": "elm-qrcode/static/js/main.5f6909b6.chunk.js",
-  "main.js.map": "elm-qrcode/static/js/main.5f6909b6.chunk.js.map",
-  "runtime~main.js": "elm-qrcode/static/js/runtime~main.fca7d6cc.js",
-  "runtime~main.js.map": "elm-qrcode/static/js/runtime~main.fca7d6cc.js.map",
-  "vendors~main.js": "elm-qrcode/static/js/vendors~main.3ca81432.chunk.js",
-  "vendors~main.js.map": "elm-qrcode/static/js/vendors~main.3ca81432.chunk.js.map",
-  "./service-worker.js": "elm-qrcode/./service-worker.js",
-  "index.html": "elm-qrcode/index.html",
-  "precache-manifest.b87eed52b4409502b762255e0cb70495.js": "elm-qrcode/precache-manifest.b87eed52b4409502b762255e0cb70495.js"
+  "main.css": "/elm-qrcode/static/css/main.64d75583.chunk.css",
+  "main.js": "/elm-qrcode/static/js/main.5f6909b6.chunk.js",
+  "main.js.map": "/elm-qrcode/static/js/main.5f6909b6.chunk.js.map",
+  "runtime~main.js": "/elm-qrcode/static/js/runtime~main.4247de1a.js",
+  "runtime~main.js.map": "/elm-qrcode/static/js/runtime~main.4247de1a.js.map",
+  "vendors~main.js": "/elm-qrcode/static/js/vendors~main.3ca81432.chunk.js",
+  "vendors~main.js.map": "/elm-qrcode/static/js/vendors~main.3ca81432.chunk.js.map",
+  "./service-worker.js": "/elm-qrcode/./service-worker.js",
+  "index.html": "/elm-qrcode/index.html",
+  "precache-manifest.be1172cad76526a005416a0cbd5d4256.js": "/elm-qrcode/precache-manifest.be1172cad76526a005416a0cbd5d4256.js"
 }
