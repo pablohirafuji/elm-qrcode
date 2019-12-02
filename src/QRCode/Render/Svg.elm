@@ -25,82 +25,93 @@ viewWithoutQuietZone matrix =
 viewBase : Int -> Matrix.Model -> Html msg
 viewBase quietZoneSize matrix =
     let
-        quietZone =
-            (2 * quietZoneSize) * moduleSize
+        quietZonePx =
+            quietZoneSize * moduleSize
 
         sizePx =
-            String.fromInt (List.length matrix * moduleSize + quietZone)
+            String.fromInt (List.length matrix * moduleSize + (2 * quietZonePx))
     in
     matrix
         |> List.map
-            (ListE.indexedFoldl toRects ( Nothing, [] )
+            (List.foldl toRowLines
+                ( { width = 0
+                  , space = 0
+                  }
+                , []
+                )
                 >> appendLastRect
                 >> List.reverse
             )
         |> List.indexedMap (viewRow quietZoneSize)
         |> List.concat
+        |> String.join " "
+        |> Svg.Attributes.d
+        |> (\d ->
+                [ Svg.path
+                    [ d
+                    , "translate("
+                        ++ String.fromInt quietZonePx
+                        ++ ", "
+                        ++ String.fromFloat (toFloat quietZonePx + (toFloat moduleSize / 2))
+                        ++ ")"
+                        |> Svg.Attributes.transform
+                    ]
+                    []
+                ]
+           )
         |> svg
             [ width sizePx
             , height sizePx
             , viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
             , shapeRendering "crispEdges"
-            , fill "black"
+            , Svg.Attributes.stroke "black"
+            , Svg.Attributes.strokeWidth (String.fromInt moduleSize ++ "px")
             ]
 
 
 type alias Rect =
-    { x : Int
-    , width : Int
+    { width : Int
+    , space : Int
     }
 
 
-toRects : Int -> Bool -> ( Maybe Rect, List Rect ) -> ( Maybe Rect, List Rect )
-toRects colIndex isDark ( maybeLastRect, rects ) =
+toRowLines : Bool -> ( Rect, List String ) -> ( Rect, List String )
+toRowLines isDark ( lastRect, rowLines ) =
     if isDark then
-        case maybeLastRect of
-            Just rect ->
-                ( Just { rect | width = rect.width + 1 }
-                , rects
-                )
+        if lastRect.space == 0 then
+            ( { lastRect | width = lastRect.width + 1 }
+            , rowLines
+            )
 
-            Nothing ->
-                ( Just
-                    { x = colIndex
-                    , width = 1
-                    }
-                , rects
-                )
+        else
+            ( { width = 1
+              , space = 0
+              }
+            , ([ "h"
+               , String.fromInt (lastRect.width * moduleSize)
+               , "m"
+               , String.fromInt (lastRect.space * moduleSize)
+               , "0"
+               ]
+                |> String.join " "
+              )
+                :: rowLines
+            )
 
     else
-        case maybeLastRect of
-            Just rect ->
-                ( Nothing, rect :: rects )
-
-            Nothing ->
-                ( Nothing, rects )
+        ( { lastRect | space = lastRect.space + 1 }
+        , rowLines
+        )
 
 
-appendLastRect : ( Maybe Rect, List Rect ) -> List Rect
-appendLastRect ( maybeLastRect, rects ) =
-    case maybeLastRect of
-        Just rect ->
-            rect :: rects
-
-        Nothing ->
-            rects
+appendLastRect : ( Rect, List String ) -> List String
+appendLastRect ( lastRect, rowLines ) =
+    ("h " ++ String.fromInt (lastRect.width * moduleSize))
+        :: rowLines
 
 
-viewRow : Int -> Int -> List Rect -> List (Html msg)
-viewRow quietZoneSize row rects =
-    List.map (viewRect quietZoneSize row) rects
-
-
-viewRect : Int -> Int -> Rect -> Html msg
-viewRect quietZoneSize row rect =
-    Svg.rect
-        [ y (String.fromInt ((row + quietZoneSize) * moduleSize))
-        , x (String.fromInt ((rect.x + quietZoneSize) * moduleSize))
-        , width (String.fromInt (rect.width * moduleSize))
-        , height (String.fromInt moduleSize)
-        ]
-        []
+viewRow : Int -> Int -> List String -> List String
+viewRow quietZoneSize rowIndex rowLines =
+    "M 0"
+        :: String.fromInt (rowIndex * moduleSize)
+        :: rowLines
