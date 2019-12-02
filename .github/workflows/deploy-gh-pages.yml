@@ -12,7 +12,12 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Build
+    - name: Test
+      run: |
+        npm install elm-test
+        node node_modules/elm-test/bin/elm-test
+
+    - name: Build Demo
       run: |
         cd demo
         npm install
