@@ -12,6 +12,11 @@ jobs:
       with:
         fetch-depth: 1
 
+    - name: Setup Elm
+      uses: jorelali/setup-elm@v1
+      with:
+        elm-version: 0.19.1
+
     - name: Test
       uses: jorelali/setup-elm@v1
       with:
