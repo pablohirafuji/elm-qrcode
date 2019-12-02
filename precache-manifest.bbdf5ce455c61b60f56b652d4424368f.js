@@ -1,15 +1,15 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "f9d714bec7d9dba0806f63055db55106",
+    "revision": "4f24762510b7e488d4cd3f11ab905cbc",
     "url": "/elm-qrcode/index.html"
   },
   {
-    "revision": "5a89c051190e37cdbd79",
-    "url": "/elm-qrcode/static/css/main.264f4ac5.chunk.css"
+    "revision": "350d002e28ccf3bb6d64",
+    "url": "/elm-qrcode/static/css/main.be5447ee.chunk.css"
   },
   {
-    "revision": "5a89c051190e37cdbd79",
-    "url": "/elm-qrcode/static/js/main.5a89c051.chunk.js"
+    "revision": "350d002e28ccf3bb6d64",
+    "url": "/elm-qrcode/static/js/main.350d002e.chunk.js"
   },
   {
     "revision": "4247de1afc9dd3b2c6c7",
