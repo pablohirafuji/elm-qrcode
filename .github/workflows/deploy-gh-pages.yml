@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Test, Build and Deploy
 on:
   push: 
     branches: 
@@ -18,9 +18,6 @@ jobs:
         elm-version: 0.19.1
 
     - name: Test
-      uses: jorelali/setup-elm@v1
-      with:
-        elm-version: 0.19.1
       run: |
         npm install elm-test
         node node_modules/elm-test/bin/elm-test
