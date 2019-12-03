@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "4f24762510b7e488d4cd3f11ab905cbc",
+    "revision": "d5bda6a6d240c15a6e331813b0ab7173",
     "url": "/elm-qrcode/index.html"
   },
   {
