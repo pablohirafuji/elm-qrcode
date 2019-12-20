@@ -45,7 +45,6 @@ type alias Model =
     { message : String
     , ecLevel : ErrorCorrection
     , renderer : Renderer
-    , finalMessage : String
     }
 
 
@@ -54,7 +53,6 @@ initModel mS =
     { message = Maybe.withDefault "Elm QR Code" mS
     , ecLevel = Quartile
     , renderer = Svg
-    , finalMessage = Maybe.withDefault "Elm QR Code" mS
     }
 
 
@@ -75,7 +73,6 @@ type Msg
     | UpdateMessage String
     | ChangeRenderer Renderer
     | ChangeErrorCorrection ErrorCorrection
-    | Render
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,11 +103,6 @@ update msg model =
             , Cmd.none
             )
 
-        Render ->
-            ( { model | finalMessage = model.message }
-            , Cmd.none
-            )
-
 
 
 -- VIEW
@@ -122,7 +114,7 @@ view model =
 
 
 view_ : Model -> List (Html Msg)
-view_ { ecLevel, renderer, finalMessage, message } =
+view_ { ecLevel, renderer, message } =
     [ h1 []
         [ text "Elm QR Code "
         , small [] [ text "v3.2.0" ]
@@ -137,7 +129,7 @@ view_ { ecLevel, renderer, finalMessage, message } =
         , a [ href "https://github.com/pablohirafuji/elm-qrcode/blob/master/demo/src/Main.elm" ]
             [ text "Source" ]
         ]
-    , form [ onSubmit Render ]
+    , div []
         [ input
             [ onInput UpdateMessage
             , Html.Attributes.value message
@@ -214,10 +206,9 @@ view_ { ecLevel, renderer, finalMessage, message } =
                 [ selected (renderer == Bmp) ]
                 [ text "BMP" ]
             ]
-        , button [ type_ "submit" ] [ text "Render" ]
         ]
     , div [ class "qrcode" ]
-        [ lazy3 qrCodeView finalMessage ecLevel renderer ]
+        [ lazy3 qrCodeView message ecLevel renderer ]
     ]
 
 
