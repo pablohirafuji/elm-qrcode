@@ -1,7 +1,8 @@
 module QRCode exposing
     ( QRCode, ErrorCorrection(..)
     , encode, encodeWith
-    , toSvg, toSvgWithoutQuietZone, toString, toMatrix, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
+    , toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
+    , toMatrix
     , Error(..)
     )
 
@@ -18,6 +19,11 @@ module QRCode exposing
 # Rendering
 
 @docs toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
+
+
+# Extracting
+
+@docs toMatrix
 
 
 # Error
@@ -156,6 +162,7 @@ Returns:
 toString : QRCode -> String
 toString (QRCode qrCode) =
     String_.view qrCode
+
 
 {-| Transform a [QRCode](#QRCode) into a list of list of booleans.
 
