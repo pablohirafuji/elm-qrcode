@@ -1,6 +1,11 @@
 # Changelog
 
 
+### 3.3.0
+
+- Add `toMatrix` (Thanks @pravdomil!)
+
+
 ### 3.2.0
 
 Use https://package.elm-lang.org/packages/justgook/elm-image/latest package to add raster images rendering option.
