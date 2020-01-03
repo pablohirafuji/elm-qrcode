@@ -1,7 +1,7 @@
 module QRCode exposing
     ( QRCode, ErrorCorrection(..)
     , encode, encodeWith
-    , toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
+    , toSvg, toSvgWithoutQuietZone, toString, toMatrix, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
     , Error(..)
     )
 
@@ -156,6 +156,18 @@ Returns:
 toString : QRCode -> String
 toString (QRCode qrCode) =
     String_.view qrCode
+
+{-| Transform a [QRCode](#QRCode) into a list of list of booleans.
+
+    "Hello World!"
+        |> QRCode.encode
+        |> Result.map QRCode.toMatrix
+        |> Result.withDefault "Error while encoding to QRCode."
+
+-}
+toMatrix : QRCode -> List (List Bool)
+toMatrix (QRCode qrCode) =
+    qrCode
 
 
 {-| Transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image). You can transform the Image into a [PNG](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#toPngUrl) or [BMP](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#toBmpUrl).
