@@ -169,7 +169,7 @@ toString (QRCode qrCode) =
     "Hello World!"
         |> QRCode.encode
         |> Result.map QRCode.toMatrix
-        |> Result.withDefault "Error while encoding to QRCode."
+        |> Result.withDefault []
 
 -}
 toMatrix : QRCode -> List (List Bool)
