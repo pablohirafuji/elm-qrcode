@@ -1,12 +1,12 @@
 {
   "main.css": "/elm-qrcode/static/css/main.be5447ee.chunk.css",
-  "main.js": "/elm-qrcode/static/js/main.d59131d0.chunk.js",
-  "main.js.map": "/elm-qrcode/static/js/main.d59131d0.chunk.js.map",
+  "main.js": "/elm-qrcode/static/js/main.4b9f9a0d.chunk.js",
+  "main.js.map": "/elm-qrcode/static/js/main.4b9f9a0d.chunk.js.map",
   "runtime~main.js": "/elm-qrcode/static/js/runtime~main.4247de1a.js",
   "runtime~main.js.map": "/elm-qrcode/static/js/runtime~main.4247de1a.js.map",
   "vendors~main.js": "/elm-qrcode/static/js/vendors~main.604c6712.chunk.js",
   "vendors~main.js.map": "/elm-qrcode/static/js/vendors~main.604c6712.chunk.js.map",
   "./service-worker.js": "/elm-qrcode/./service-worker.js",
   "index.html": "/elm-qrcode/index.html",
-  "precache-manifest.83f084998aa6336dc61a9cb0e8c6da20.js": "/elm-qrcode/precache-manifest.83f084998aa6336dc61a9cb0e8c6da20.js"
+  "precache-manifest.4ae8b6a8a9f6a7f3fd0f649e62ff9167.js": "/elm-qrcode/precache-manifest.4ae8b6a8a9f6a7f3fd0f649e62ff9167.js"
 }
