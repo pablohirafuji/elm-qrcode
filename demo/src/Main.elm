@@ -125,7 +125,7 @@ view_ : Model -> List (Html Msg)
 view_ { ecLevel, renderer, finalMessage, message } =
     [ h1 []
         [ text "Elm QR Code "
-        , small [] [ text "v3.2.0" ]
+        , small [] [ text "v3.3.1" ]
         ]
     , p [ class "subheading" ]
         [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
