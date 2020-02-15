@@ -55,6 +55,7 @@ viewBase quietZoneSize matrix =
                         ++ String.fromFloat (toFloat quietZonePx + (toFloat moduleSize / 2))
                         ++ ")"
                         |> Svg.Attributes.transform
+                    , Svg.Attributes.style "stroke-width: 5px"
                     ]
                     []
                 ]
