@@ -61,9 +61,7 @@ viewBase quietZoneSize matrix =
                 ]
            )
         |> svg
-            [ width sizePx
-            , height sizePx
-            , viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
+            [ viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
             , shapeRendering "crispEdges"
             , Svg.Attributes.stroke "#000"
             , Svg.Attributes.strokeWidth (String.fromInt moduleSize ++ "px")
