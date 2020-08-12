@@ -40,7 +40,8 @@ import QRCode.Error as Error
 import QRCode.Matrix as Matrix exposing (Model)
 import QRCode.Render.Raster as Raster
 import QRCode.Render.String as String_
-import QRCode.Render.Svg as Svg
+import QRCode.Render.Svg as Svg_
+import Svg
 
 
 {-| QRCode type.
@@ -104,27 +105,36 @@ convertEC ec =
 
 {-| Transform a [QRCode](#QRCode) into a svg element.
 
+    import Svg.Attributes as SvgA
+
     qrCodeView : String -> Html msg
     qrCodeView message =
         QRCode.encode message
-            |> Result.map QRCode.toSvg
+            |> Result.map
+                (QRCode.toSvg
+                    [ SvgA.width "500px"
+                    , SvgA.height "500px"
+                    ]
+                )
             |> Result.withDefault
                 (Html.text "Error while encoding to QRCode.")
 
-**Tip**: You can determine the size of the generated svg setting
-`width` and `height` styles.
+**Beware**: You **must** set some width and height to render anything.
+You can set it by defining `width` and `height` svg's CSS properties or
+by passing the `Svg.Attributes.width` and `Svg.Attributes.height`
+svg attributes.
 
 -}
-toSvg : QRCode -> Html msg
-toSvg (QRCode qrCode) =
-    Svg.view qrCode
+toSvg : List (Svg.Attribute msg) -> QRCode -> Html msg
+toSvg extraAttrs (QRCode qrCode) =
+    Svg_.view extraAttrs qrCode
 
 
 {-| Same as [toSvg](#toSvg), but without the [quiet zone](https://en.wikipedia.org/wiki/QR_code#/media/File:QR_Code_Structure_Example_3.svg).
 -}
-toSvgWithoutQuietZone : QRCode -> Html msg
-toSvgWithoutQuietZone (QRCode qrCode) =
-    Svg.viewWithoutQuietZone qrCode
+toSvgWithoutQuietZone : List (Svg.Attribute msg) -> QRCode -> Html msg
+toSvgWithoutQuietZone extraAttrs (QRCode qrCode) =
+    Svg_.viewWithoutQuietZone extraAttrs qrCode
 
 
 {-| Transform a [QRCode](#QRCode) into a string.
@@ -220,15 +230,15 @@ toImageWithOptions config (QRCode qrCode) =
 
 {-| Available options to transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image) with [toImageWithOptions](#toImageWithOptions).
 
-  - `moduleSize` is the size of the module (the dark square) in px;
-  - `moduleColor` and `emptyColor` expects an `Int` as `0xRRGGBBAA`;
+  - `moduleSize` is the size of the module (the QRCode "pixel") in px;
+  - `darkColor` and `lightColor` expects an `Int` as `0xRRGGBBAA`;
   - `quietZoneSize` is the number of modules the [quiet zone](https://en.wikipedia.org/wiki/QR_code#Standards) should have.
 
 -}
 type alias ImageOptions =
     { moduleSize : Int
-    , moduleColor : Int
-    , emptyColor : Int
+    , darkColor : Int
+    , lightColor : Int
     , quietZoneSize : Int
     }
 
@@ -237,8 +247,8 @@ type alias ImageOptions =
 
     defaultImageOptions =
         { moduleSize = 5
-        , moduleColor = 0xFF
-        , emptyColor = 0xFFFFFFFF
+        , darkColor = 0xFF
+        , lightColor = 0xFFFFFFFF
         , quietZoneSize = 4
         }
 
@@ -246,8 +256,8 @@ type alias ImageOptions =
 defaultImageOptions : ImageOptions
 defaultImageOptions =
     { moduleSize = 5
-    , moduleColor = 0xFF
-    , emptyColor = 0xFFFFFFFF
+    , darkColor = 0xFF
+    , lightColor = 0xFFFFFFFF
     , quietZoneSize = 4
     }
 

@@ -5,14 +5,20 @@ QR Code encoding and rendering. [Demo](https://pablohirafuji.github.io/elm-qrcod
 ## Basic Usage
 
 ```elm
+import Html exposing (Html)
 import QRCode
+import Svg.Attributes as SvgA
 
 qrCodeView : String -> Html msg
 qrCodeView message =
     QRCode.encode message
-        |> Result.map QRCode.toSvg
-        |> Result.withDefault
-            (Html.text "Error while encoding to QRCode.")
+        |> Result.map
+            (QRCode.toSvg
+                [ SvgA.width "100px"
+                , SvgA.height "100px"
+                ]
+            )
+        |> Result.withDefault (Html.text "Error while encoding to QRCode.")
 
 ```
 

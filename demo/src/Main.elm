@@ -10,6 +10,7 @@ import Image exposing (Image)
 import Json.Decode as JsonD exposing (Value)
 import Json.Encode as JsonE
 import QRCode exposing (Error(..), ErrorCorrection(..), QRCode)
+import Svg.Attributes as SvgA
 import Url exposing (Url)
 
 
@@ -125,7 +126,7 @@ view_ : Model -> List (Html Msg)
 view_ { ecLevel, renderer, finalMessage, message } =
     [ h1 []
         [ text "Elm QR Code "
-        , small [] [ text "v3.3.1" ]
+        , small [] [ text "v4.0.0" ]
         ]
     , p [ class "subheading" ]
         [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
@@ -279,7 +280,11 @@ qrCodeRender : Renderer -> QRCode -> Html msg
 qrCodeRender renderer qrCode =
     case renderer of
         Svg ->
-            QRCode.toSvg qrCode
+            QRCode.toSvg
+                [ SvgA.width "300px"
+                , SvgA.height "300px"
+                ]
+                qrCode
 
         String_ ->
             Html.pre

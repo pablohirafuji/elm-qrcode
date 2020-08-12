@@ -12,18 +12,18 @@ moduleSize =
     5
 
 
-view : Matrix.Model -> Html msg
-view matrix =
-    viewBase 4 matrix
+view : List (Svg.Attribute msg) -> Matrix.Model -> Html msg
+view =
+    viewBase 4
 
 
-viewWithoutQuietZone : Matrix.Model -> Html msg
-viewWithoutQuietZone matrix =
-    viewBase 0 matrix
+viewWithoutQuietZone : List (Svg.Attribute msg) -> Matrix.Model -> Html msg
+viewWithoutQuietZone =
+    viewBase 0
 
 
-viewBase : Int -> Matrix.Model -> Html msg
-viewBase quietZoneSize matrix =
+viewBase : Int -> List (Svg.Attribute msg) -> Matrix.Model -> Html msg
+viewBase quietZoneSize extraAttrs matrix =
     let
         quietZonePx =
             quietZoneSize * moduleSize
@@ -61,11 +61,13 @@ viewBase quietZoneSize matrix =
                 ]
            )
         |> svg
-            [ viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
-            , shapeRendering "crispEdges"
-            , Svg.Attributes.stroke "#000"
-            , Svg.Attributes.strokeWidth (String.fromInt moduleSize ++ "px")
-            ]
+            ([ viewBox ("0 0 " ++ sizePx ++ " " ++ sizePx)
+             , shapeRendering "crispEdges"
+             , Svg.Attributes.stroke "#000"
+             , Svg.Attributes.strokeWidth (String.fromInt moduleSize ++ "px")
+             ]
+                ++ extraAttrs
+            )
 
 
 type alias Rect =

@@ -5,8 +5,8 @@ import Image exposing (Image)
 
 type alias Options =
     { moduleSize : Int
-    , moduleColor : Int
-    , emptyColor : Int
+    , darkColor : Int
+    , lightColor : Int
     , quietZoneSize : Int
     }
 
@@ -63,7 +63,7 @@ addQuietZone quietZoneSize matrix =
 moduleToPixel : Options -> Bool -> Image.Pixel
 moduleToPixel options isDark =
     if isDark then
-        options.moduleColor
+        options.darkColor
 
     else
-        options.emptyColor
+        options.lightColor

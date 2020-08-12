@@ -11,10 +11,10 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "create-elm-app": "^4.0.0"
+    "create-elm-app": "^4.2.26"
   },
   "engines": {
-    "node": "10.x",
+    "node": "12.x",
     "npm": "6.x",
     "yarn": "1.x"
   }
