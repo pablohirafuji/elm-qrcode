@@ -12,10 +12,23 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Setup Elm
-      uses: jorelali/setup-elm@v1
+    - name: Use Node.js 13
+      uses: actions/setup-node@v1
       with:
-        elm-version: 0.19.1
+        node-version: 13
+
+    - uses: actions/cache@v1
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - uses: actions/cache@v1
+      id: elm-cache
+      with:
+        path: ~/.elm
+        key: ${{ runner.os }}-elm--home-${{ hashFiles('**/elm.json') }}
 
     - name: Test
       run: |
@@ -36,3 +49,8 @@ jobs:
         BRANCH: gh-pages
         FOLDER: demo/build
         CLEAN: true
+
+    - uses: dillonkearns/elm-publish-action@master
+      with:
+        github-token: ${{ secrets.ACCESS_TOKEN }}
+        path-to-elm: ./demo/node_modules/elm/bin/elm
