@@ -12,10 +12,10 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Use Node.js 13
-      uses: actions/setup-node@v1
+    - name: Setup Elm
+      uses: jorelali/setup-elm@v1
       with:
-        node-version: 13
+        elm-version: 0.19.1
 
     - uses: actions/cache@v1
       with:
@@ -53,4 +53,3 @@ jobs:
     - uses: dillonkearns/elm-publish-action@master
       with:
         github-token: ${{ secrets.ACCESS_TOKEN }}
-        path-to-elm: ./demo/node_modules/elm/bin/elm
