@@ -1,8 +1,8 @@
 module QRCode exposing
     ( QRCode, ErrorCorrection(..)
-    , encode, encodeWith
-    , toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
-    , toMatrix
+    , fromString, fromStringWith
+    , toSvg, toSvgWithoutQuietZone, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
+    , toMatrix, version
     , Error(..)
     )
 
@@ -13,17 +13,17 @@ module QRCode exposing
 
 # Encoding
 
-@docs encode, encodeWith
+@docs fromString, fromStringWith
 
 
 # Rendering
 
-@docs toSvg, toSvgWithoutQuietZone, toString, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
+@docs toSvg, toSvgWithoutQuietZone, toImage, toImageWithOptions, ImageOptions, defaultImageOptions
 
 
 # Extracting
 
-@docs toMatrix
+@docs toMatrix, version
 
 
 # Error
@@ -37,6 +37,7 @@ import Image exposing (Image)
 import QRCode.ECLevel as ECLevel exposing (ECLevel)
 import QRCode.Encode as Encode
 import QRCode.Error as Error
+import QRCode.GroupInfo exposing (GroupInfo)
 import QRCode.Matrix as Matrix exposing (Model)
 import QRCode.Render.Raster as Raster
 import QRCode.Render.String as String_
@@ -47,7 +48,10 @@ import Svg
 {-| QRCode type.
 -}
 type QRCode
-    = QRCode (List (List Bool))
+    = QRCode
+        { version : Int
+        , matrix : List (List Bool)
+        }
 
 
 {-| Error correction level. Provides the following error
@@ -69,22 +73,29 @@ type ErrorCorrection
 {-| Transform a string into a result [Error](#Error)
 or a [QRCode](#QRCode) using `Quartile` [ErrorCorrection](#ErrorCorrection).
 -}
-encode : String -> Result Error QRCode
-encode =
-    encodeWith Quartile
+fromString : String -> Result Error QRCode
+fromString =
+    fromStringWith Quartile
 
 
 {-| Transform a string with a given [ErrorCorrection](#ErrorCorrection)
 into a result [Error](#Error) or a [QRCode](#QRCode).
 -}
-encodeWith : ErrorCorrection -> String -> Result Error QRCode
-encodeWith ecLevel input =
-    Result.mapError convertError
-        (Result.map QRCode
-            (Result.andThen Matrix.apply
-                (Encode.encode input (convertEC ecLevel))
+fromStringWith : ErrorCorrection -> String -> Result Error QRCode
+fromStringWith ecLevel input =
+    Encode.encode input (convertEC ecLevel)
+        |> Result.andThen
+            (\( encodeModel, encodedData ) ->
+                Matrix.apply ( encodeModel, encodedData )
+                    |> Result.map
+                        (\matrix ->
+                            QRCode
+                                { version = encodeModel.groupInfo.version
+                                , matrix = matrix
+                                }
+                        )
             )
-        )
+        |> Result.mapError convertError
 
 
 convertEC : ErrorCorrection -> ECLevel
@@ -109,7 +120,7 @@ convertEC ec =
 
     qrCodeView : String -> Html msg
     qrCodeView message =
-        QRCode.encode message
+        QRCode.fromString message
             |> Result.map
                 (QRCode.toSvg
                     [ SvgA.width "500px"
@@ -126,65 +137,15 @@ svg attributes.
 
 -}
 toSvg : List (Svg.Attribute msg) -> QRCode -> Html msg
-toSvg extraAttrs (QRCode qrCode) =
-    Svg_.view extraAttrs qrCode
+toSvg extraAttrs (QRCode { matrix }) =
+    Svg_.view extraAttrs matrix
 
 
 {-| Same as [toSvg](#toSvg), but without the [quiet zone](https://en.wikipedia.org/wiki/QR_code#/media/File:QR_Code_Structure_Example_3.svg).
 -}
 toSvgWithoutQuietZone : List (Svg.Attribute msg) -> QRCode -> Html msg
-toSvgWithoutQuietZone extraAttrs (QRCode qrCode) =
-    Svg_.viewWithoutQuietZone extraAttrs qrCode
-
-
-{-| Transform a [QRCode](#QRCode) into a string.
-
-    "Hello World!"
-        |> QRCode.encode
-        |> Result.map QRCode.toString
-        |> Result.withDefault "Error while encoding to QRCode."
-
-Returns:
-
-    ■■■■■■■ ■■■■  ■■■■■■■
-    ■     ■ ■■■■  ■     ■
-    ■ ■■■ ■ ■■■■■ ■ ■■■ ■
-    ■ ■■■ ■ ■   ■ ■ ■■■ ■
-    ■ ■■■ ■ ■■■■  ■ ■■■ ■
-    ■     ■    ■  ■     ■
-    ■■■■■■■ ■ ■ ■ ■■■■■■■
-            ■ ■■
-     ■■ ■ ■■  ■   ■ ■■■■■
-    ■■ ■■■   ■■■■ ■■■  ■■
-     ■ ■■ ■■ ■■■■■ ■■■■■■
-     ■■      ■■■■   ■  ■
-    ■  ■ ■■■  ■■■■ ■■
-            ■■ ■■■    ■■
-    ■■■■■■■ ■ ■    ■■ ■■■
-    ■     ■  ■  ■  ■    ■
-    ■ ■■■ ■ ■■■     ■
-    ■ ■■■ ■   ■■  ■■■ ■■
-    ■ ■■■ ■ ■ ■ ■ ■ ■ ■ ■
-    ■     ■ ■  ■    ■  ■
-    ■■■■■■■   ■■■  ■   ■■
-
--}
-toString : QRCode -> String
-toString (QRCode qrCode) =
-    String_.view qrCode
-
-
-{-| Transform a [QRCode](#QRCode) into a list of list of booleans.
-
-    "Hello World!"
-        |> QRCode.encode
-        |> Result.map QRCode.toMatrix
-        |> Result.withDefault []
-
--}
-toMatrix : QRCode -> List (List Bool)
-toMatrix (QRCode qrCode) =
-    qrCode
+toSvgWithoutQuietZone extraAttrs (QRCode { matrix }) =
+    Svg_.viewWithoutQuietZone extraAttrs matrix
 
 
 {-| Transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image). You can transform the Image into a [PNG](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#toPngUrl) or [BMP](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#toBmpUrl).
@@ -196,7 +157,7 @@ toMatrix (QRCode qrCode) =
 
     viewQRCode : String -> Html msg
     viewQRCode message =
-        QRCode.encode message
+        QRCode.fromString message
             |> Result.map
                 (\qrCode ->
                     Html.img
@@ -224,8 +185,8 @@ toImage =
 {-| Transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image) with an [ImageOptions](#ImageOptions).
 -}
 toImageWithOptions : ImageOptions -> QRCode -> Image
-toImageWithOptions config (QRCode qrCode) =
-    Raster.toImageWithOptions config qrCode
+toImageWithOptions config (QRCode { matrix }) =
+    Raster.toImageWithOptions config matrix
 
 
 {-| Available options to transform a [QRCode](#QRCode) into an [Image](https://package.elm-lang.org/packages/justgook/elm-image/latest/Image#Image) with [toImageWithOptions](#toImageWithOptions).
@@ -260,6 +221,31 @@ defaultImageOptions =
     , lightColor = 0xFFFFFFFF
     , quietZoneSize = 4
     }
+
+
+{-| Transform a [QRCode](#QRCode) into a list of list of booleans.
+
+    "Hello World!"
+        |> QRCode.fromString
+        |> Result.map QRCode.toMatrix
+
+-}
+toMatrix : QRCode -> List (List Bool)
+toMatrix (QRCode { matrix }) =
+    matrix
+
+
+{-| Get the [version](https://www.qrcode.com/en/about/version.html) of the [QRCode](#QRCode).
+
+    "Hello World!"
+        |> QRCode.fromString
+        |> Result.map QRCode.version
+        -- (==) Ok 1
+
+-}
+version : QRCode -> Int
+version (QRCode r) =
+    r.version
 
 
 {-| Possible encoding errors.

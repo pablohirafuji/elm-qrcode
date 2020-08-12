@@ -50,8 +50,6 @@ apply ( { ecLevel, groupInfo }, bytes ) =
 
 
 
---|> Result.map (setFormatInfo ecLevel size)
---|> Result.map (Model size)
 ---------------------------------------------------------------------
 -- Finder Pattern
 ---------------------------------------------------------------------

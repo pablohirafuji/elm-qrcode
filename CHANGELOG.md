@@ -5,9 +5,12 @@
 
 - Don't set the `width` and `height` of the svg (Thanks @uebayasi!)
 - Modify `toSvg` and `toSvgWithoutQuietZone` to accept `List (Svg.Attribute msg)` - Fix [#9](https://github.com/pablohirafuji/elm-qrcode/issues/9) (Thanks @MartinSStewart!)
-- Renames:
-  - `moduleColor` -> `darkColor`
-  - `emptyColor` -> `lightColor`
+- Rename `encode` -> `fromString`
+- Rename `encodeWith` -> `fromStringWith`
+- Rename `moduleColor` -> `darkColor`
+- Rename `emptyColor` -> `lightColor`
+- Add `version`
+- Remove `toString`
 
 
 ### 3.3.0

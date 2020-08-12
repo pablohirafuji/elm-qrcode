@@ -11,7 +11,7 @@ import Svg.Attributes as SvgA
 
 qrCodeView : String -> Html msg
 qrCodeView message =
-    QRCode.encode message
+    QRCode.fromString message
         |> Result.map
             (QRCode.toSvg
                 [ SvgA.width "100px"

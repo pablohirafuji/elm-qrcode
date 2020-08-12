@@ -61,7 +61,6 @@ initModel mS =
 
 type Renderer
     = Svg
-    | String_
     | Png
     | Bmp
 
@@ -187,9 +186,6 @@ view_ { ecLevel, renderer, finalMessage, message } =
                             "SVG" ->
                                 Svg
 
-                            "String" ->
-                                String_
-
                             "PNG" ->
                                 Png
 
@@ -206,9 +202,6 @@ view_ { ecLevel, renderer, finalMessage, message } =
                 [ selected (renderer == Svg) ]
                 [ text "SVG" ]
             , option
-                [ selected (renderer == String_) ]
-                [ text "String" ]
-            , option
                 [ selected (renderer == Png) ]
                 [ text "PNG" ]
             , option
@@ -217,35 +210,72 @@ view_ { ecLevel, renderer, finalMessage, message } =
             ]
         , button [ type_ "submit" ] [ text "Render" ]
         ]
-    , div [ class "qrcode" ]
-        [ lazy3 qrCodeView finalMessage ecLevel renderer ]
+    , lazy3 qrCodeView finalMessage ecLevel renderer
     ]
 
 
 qrCodeView : String -> ErrorCorrection -> Renderer -> Html msg
 qrCodeView message ecLevel renderer =
-    QRCode.encodeWith ecLevel message
-        |> Result.map (qrCodeRender renderer)
+    QRCode.fromStringWith ecLevel message
+        |> Result.map
+            (qrCodeRender renderer
+                >> List.singleton
+                >> div [ class "qrcode" ]
+            )
         |> (\n ->
                 case n of
                     Ok a ->
                         a
 
                     Err e ->
-                        div []
-                            [ p []
-                                [ text "An error occured while encoding to QRCode: "
-                                , b [] [ text (errorToString e) ]
-                                ]
-                            , p []
-                                [ text "If the error is not "
-                                , b [] [ text "InputLengthOverflow" ]
-                                , text " then, please, report at "
-                                , a [ href "https://github.com/pablohirafuji/elm-qrcode/issues" ] [ text "https://github.com/pablohirafuji/elm-qrcode/issues" ]
-                                , text "."
-                                ]
-                            ]
+                        case e of
+                            InputLengthOverflow ->
+                                div []
+                                    [ p []
+                                        [ text "Too much information! I can't encode that!"
+                                        ]
+                                    ]
+
+                            _ ->
+                                div []
+                                    [ p []
+                                        [ text "An error occured while encoding to QRCode: "
+                                        , b [] [ text (errorToString e) ]
+                                        ]
+                                    , p []
+                                        [ text "Please, report at "
+                                        , a [ href "https://github.com/pablohirafuji/elm-qrcode/issues" ] [ text "https://github.com/pablohirafuji/elm-qrcode/issues" ]
+                                        , text "."
+                                        ]
+                                    ]
            )
+
+
+qrCodeRender : Renderer -> QRCode -> Html msg
+qrCodeRender renderer qrCode =
+    case renderer of
+        Svg ->
+            QRCode.toSvg
+                [ SvgA.width "300px"
+                , SvgA.height "300px"
+                ]
+                qrCode
+
+        Png ->
+            Html.img
+                [ QRCode.toImage qrCode
+                    |> Image.toPngUrl
+                    |> src
+                ]
+                []
+
+        Bmp ->
+            Html.img
+                [ QRCode.toImage qrCode
+                    |> Image.toBmpUrl
+                    |> src
+                ]
+                []
 
 
 errorToString : QRCode.Error -> String
@@ -274,37 +304,3 @@ errorToString e =
 
         InputLengthOverflow ->
             "InputLengthOverflow"
-
-
-qrCodeRender : Renderer -> QRCode -> Html msg
-qrCodeRender renderer qrCode =
-    case renderer of
-        Svg ->
-            QRCode.toSvg
-                [ SvgA.width "300px"
-                , SvgA.height "300px"
-                ]
-                qrCode
-
-        String_ ->
-            Html.pre
-                [ class "qrcode__string" ]
-                [ Html.code []
-                    [ Html.text (QRCode.toString qrCode) ]
-                ]
-
-        Png ->
-            Html.img
-                [ QRCode.toImage qrCode
-                    |> Image.toPngUrl
-                    |> src
-                ]
-                []
-
-        Bmp ->
-            Html.img
-                [ QRCode.toImage qrCode
-                    |> Image.toBmpUrl
-                    |> src
-                ]
-                []
