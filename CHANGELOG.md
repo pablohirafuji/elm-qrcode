@@ -1,6 +1,11 @@
 # Changelog
 
 
+### 4.0.1
+
+Use `elm/bytes` to encode UTF8 mode.
+
+
 ### 4.0.0
 
 - Don't set the `width` and `height` of the svg (Thanks @uebayasi!)

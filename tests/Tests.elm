@@ -111,13 +111,12 @@ all =
                     Encode.encode " © ® ™ • ½ ¼ ¾ ⅓ ⅔" ECLevel.L
                         |> Result.map (Tuple.first >> .mode >> Debug.toString)
                         |> Expect.equal (Result.Ok "UTF8")
-
-            --, test "Giant UTF8" <|
-            --    \() ->
-            --        Encode.encode (String.repeat 150 " © ® ™ • ½ ¼ ¾ ⅓ ⅔") ECLevel.L
-            --            |> Result.map (Tuple.first >> .mode >> Debug.toString)
-            --            |> Result.mapError Debug.toString
-            --            |> Expect.equal (Result.Err "InputLengthOverflow")
+            , test "Giant UTF8" <|
+                \() ->
+                    Encode.encode (String.repeat 150 " © ® ™ • ½ ¼ ¾ ⅓ ⅔") ECLevel.L
+                        |> Result.map (Tuple.first >> .mode >> Debug.toString)
+                        |> Result.mapError Debug.toString
+                        |> Expect.equal (Result.Err "InputLengthOverflow")
             , fuzz string "Fuzz ECLevel M" <|
                 \rndStr ->
                     Encode.encode rndStr ECLevel.M
