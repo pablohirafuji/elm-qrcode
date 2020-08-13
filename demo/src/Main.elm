@@ -239,6 +239,7 @@ view_ { ecLevel, renderer, qrCode, message } =
         , button [ type_ "submit" ] [ text "Render" ]
         ]
     , Html.Lazy.lazy2 qrCodeView qrCode renderer
+    , p [ class "disclaimer" ] [ text "Don't insert confidential information. If there is an error, the message and error correction level will be automatically logged." ]
     ]
 
 

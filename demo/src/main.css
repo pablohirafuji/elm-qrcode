@@ -60,3 +60,11 @@ button {
   letter-spacing: -0.5px;
   margin: 0;
 }
+
+.disclaimer {
+  text-align: center;
+  max-width: 400px;
+  margin-top: 1.5rem;
+  font-size: 14px;
+  margin: 1.5rem auto;
+}
