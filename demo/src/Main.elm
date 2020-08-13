@@ -2,15 +2,18 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation exposing (Key)
+import BugsnagElm exposing (Bugsnag, BugsnagConfig)
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, selected, src, style, title, type_)
 import Html.Events exposing (on, onInput, onSubmit, targetValue)
-import Html.Lazy exposing (lazy3)
+import Html.Lazy
 import Image exposing (Image)
 import Json.Decode as JsonD exposing (Value)
 import Json.Encode as JsonE
 import QRCode exposing (Error(..), ErrorCorrection(..), QRCode)
 import Svg.Attributes as SvgA
+import Task
 import Url exposing (Url)
 
 
@@ -28,9 +31,8 @@ main =
 
 init : () -> Url -> Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( initModel url.fragment
-    , Cmd.none
-    )
+    initModel url.fragment
+        |> generateQRCode
 
 
 onUrlChange : Url -> Msg
@@ -46,7 +48,7 @@ type alias Model =
     { message : String
     , ecLevel : ErrorCorrection
     , renderer : Renderer
-    , finalMessage : String
+    , qrCode : Result Error QRCode
     }
 
 
@@ -55,7 +57,7 @@ initModel mS =
     { message = Maybe.withDefault "Elm QR Code" mS
     , ecLevel = Quartile
     , renderer = Svg
-    , finalMessage = Maybe.withDefault "Elm QR Code" mS
+    , qrCode = Err InputLengthOverflow
     }
 
 
@@ -102,14 +104,40 @@ update msg model =
             )
 
         ChangeErrorCorrection ecLevel ->
-            ( { model | ecLevel = ecLevel }
-            , Cmd.none
-            )
+            { model | ecLevel = ecLevel }
+                |> generateQRCode
 
         Render ->
-            ( { model | finalMessage = model.message }
-            , Cmd.none
-            )
+            generateQRCode model
+
+
+generateQRCode : Model -> ( Model, Cmd Msg )
+generateQRCode model =
+    let
+        qrCode =
+            QRCode.fromStringWith model.ecLevel model.message
+    in
+    ( { model | qrCode = qrCode }
+    , case qrCode of
+        Ok _ ->
+            Cmd.none
+
+        Err InputLengthOverflow ->
+            Cmd.none
+
+        Err e ->
+            bugsnag.error
+                "Error generating QRCode"
+                (errorToString e)
+                (Dict.empty
+                    |> Dict.insert "message" (JsonE.string model.message)
+                    |> Dict.insert "error-correction"
+                        (JsonE.string
+                            (errorCorrectionLevelToString model.ecLevel)
+                        )
+                )
+                |> Task.attempt (\_ -> NoOp)
+    )
 
 
 
@@ -122,7 +150,7 @@ view model =
 
 
 view_ : Model -> List (Html Msg)
-view_ { ecLevel, renderer, finalMessage, message } =
+view_ { ecLevel, renderer, qrCode, message } =
     [ h1 []
         [ text "Elm QR Code "
         , small [] [ text "v4.0.1" ]
@@ -210,13 +238,13 @@ view_ { ecLevel, renderer, finalMessage, message } =
             ]
         , button [ type_ "submit" ] [ text "Render" ]
         ]
-    , lazy3 qrCodeView finalMessage ecLevel renderer
+    , Html.Lazy.lazy2 qrCodeView qrCode renderer
     ]
 
 
-qrCodeView : String -> ErrorCorrection -> Renderer -> Html msg
-qrCodeView message ecLevel renderer =
-    QRCode.fromStringWith ecLevel message
+qrCodeView : Result Error QRCode -> Renderer -> Html msg
+qrCodeView qrCode renderer =
+    qrCode
         |> Result.map
             (qrCodeRender renderer
                 >> List.singleton
@@ -278,6 +306,22 @@ qrCodeRender renderer qrCode =
                 []
 
 
+errorCorrectionLevelToString : ErrorCorrection -> String
+errorCorrectionLevelToString e =
+    case e of
+        Low ->
+            "Low"
+
+        Medium ->
+            "Medium"
+
+        Quartile ->
+            "Quartile"
+
+        High ->
+            "High"
+
+
 errorToString : QRCode.Error -> String
 errorToString e =
     case e of
@@ -304,3 +348,18 @@ errorToString e =
 
         InputLengthOverflow ->
             "InputLengthOverflow"
+
+
+
+-- LOG
+
+
+bugsnag : Bugsnag
+bugsnag =
+    BugsnagElm.start
+        { apiKey = "51ff949add5261c76b83a77f49be9ea6"
+        , appVersion = "4.0.1"
+        , releaseStage = "production"
+        , enabledReleaseStages = [ "production", "staging", "test" ]
+        , user = Nothing
+        }
