@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
-    "create-elm-app": "^4.2.26"
+    "create-elm-app": "^5.22.0"
   },
   "engines": {
     "node": "12.x",
