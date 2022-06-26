@@ -1,5 +1,9 @@
 # Changelog
 
+### 4.0.2
+
+- Remove inline `style` attribute by @choonkeat
+- Update `justgook/elm-image` dependency from 4.0.0 to 5.0.0
 
 ### 4.0.1
 
