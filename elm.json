@@ -3,7 +3,7 @@
     "name": "pablohirafuji/elm-qrcode",
     "summary": "QR Code encoder and renderer.",
     "license": "BSD-3-Clause",
-    "version": "4.0.1",
+    "version": "4.0.2",
     "exposed-modules": [
         "QRCode"
     ],
