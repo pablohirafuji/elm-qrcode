@@ -151,20 +151,9 @@ view model =
 
 view_ : Model -> List (Html Msg)
 view_ { ecLevel, renderer, qrCode, message } =
-    [ h1 []
-        [ text "Elm QR Code "
-        , small [] [ text "v4.0.1" ]
-        ]
-    , p [ class "subheading" ]
-        [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
-            [ text "Package" ]
-        , text " / "
-        , a [ href "https://github.com/pablohirafuji/elm-qrcode" ]
-            [ text "GitHub" ]
-        , text " / "
-        , a [ href "https://github.com/pablohirafuji/elm-qrcode/blob/master/demo/src/Main.elm" ]
-            [ text "Source" ]
-        ]
+    [ inlineCss
+    , header
+    , subheading
     , form [ onSubmit Render ]
         [ input
             [ onInput UpdateMessage
@@ -241,6 +230,28 @@ view_ { ecLevel, renderer, qrCode, message } =
     , Html.Lazy.lazy2 qrCodeView qrCode renderer
     , p [ class "disclaimer" ] [ text "Don't insert confidential information. If there is an error, the message and error correction level will be automatically logged." ]
     ]
+
+
+header : Html msg
+header =
+    h1 []
+        [ text "Elm QR Code "
+        , small [] [ text "v4.0.2" ]
+        ]
+
+
+subheading : Html msg
+subheading =
+    p [ class "subheading" ]
+        [ a [ href "http://package.elm-lang.org/packages/pablohirafuji/elm-qrcode/latest" ]
+            [ text "Package" ]
+        , text " / "
+        , a [ href "https://github.com/pablohirafuji/elm-qrcode" ]
+            [ text "GitHub" ]
+        , text " / "
+        , a [ href "https://github.com/pablohirafuji/elm-qrcode/blob/master/demo/src/Main.elm" ]
+            [ text "Source" ]
+        ]
 
 
 qrCodeView : Result Error QRCode -> Renderer -> Html msg
@@ -364,3 +375,83 @@ bugsnag =
         , enabledReleaseStages = [ "production", "staging", "test" ]
         , user = Nothing
         }
+
+
+inlineCss : Html msg
+inlineCss =
+    node "style" [] [ text inlineRawCss ]
+
+
+inlineRawCss : String
+inlineRawCss =
+    """
+body {
+  margin: 40px auto;
+  max-width: 650px;
+  line-height: 1.6;
+  font-size: 18px;
+  color: #444;
+  padding: 0 10px;
+  text-align: center;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2
+}
+
+h1 {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+h1 small {
+  font-size: 1rem;
+  color: #888;
+}
+
+.subheading {
+  margin-top: 0;
+}
+
+#main>div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+input,
+select,
+button {
+  box-sizing: border-box;
+  height: 25px;
+}
+
+.qrcode {
+  margin-top: 20px;
+  align-self: center;
+  box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  display: flex;
+  background: #FFFFFF
+}
+
+.qrcode__string {
+  line-height: 0.6;
+  color: black;
+  padding: 2em;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+.disclaimer {
+  text-align: center;
+  max-width: 400px;
+  margin-top: 1.5rem;
+  font-size: 14px;
+  margin: 1.5rem auto;
+}"""

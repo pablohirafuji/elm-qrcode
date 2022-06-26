@@ -3,16 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "npx elm-app start",
-    "build": "npx elm-app build",
-    "test": "npx elm-app test"
+    "start": "npx elm reactor"
   },
   "author": "Pablo Hirafuji <pablohirafuji@gmail.com>",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {
-    "create-elm-app": "^5.22.0"
+  "dependencies": {
+    "elm": "^0.19.1-5",
+    "uglify-js": "^3.16.1"
   },
+  "devDependencies": {},
   "engines": {
     "node": "12.x",
     "npm": "6.x",
