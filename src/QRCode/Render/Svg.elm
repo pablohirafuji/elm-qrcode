@@ -1,7 +1,6 @@
 module QRCode.Render.Svg exposing (view, viewWithoutQuietZone)
 
 import Html exposing (Html)
-import List.Extra as ListE
 import QRCode.Matrix as Matrix
 import Svg exposing (svg)
 import Svg.Attributes exposing (fill, height, shapeRendering, viewBox, width, x, y)

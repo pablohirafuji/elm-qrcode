@@ -4,7 +4,6 @@ module QRCode.Encode.Alphanumeric exposing
     )
 
 import Dict exposing (Dict)
-import List.Extra as List
 import QRCode.Error exposing (Error(..))
 import Regex exposing (Regex)
 
@@ -31,7 +30,7 @@ encode str =
     List.foldr (Result.map2 (::))
         (Ok [])
         (List.map toBinary
-            (List.greedyGroupsOf 2 (String.toList str))
+            (greedyGroupsOf2 (String.toList str))
         )
 
 
@@ -109,3 +108,21 @@ alphanumericCodes =
         , ( '/', 43 )
         , ( ':', 44 )
         ]
+
+
+greedyGroupsOf2 : List a -> List (List a)
+greedyGroupsOf2 list =
+    greedyGroupsOf2Help [] list
+
+
+greedyGroupsOf2Help : List (List a) -> List a -> List (List a)
+greedyGroupsOf2Help acc list =
+    case list of
+        [] ->
+            List.reverse acc
+
+        v1 :: v2 :: rest ->
+            greedyGroupsOf2Help ([ v1, v2 ] :: acc) rest
+
+        _ ->
+            List.reverse (list :: acc)
