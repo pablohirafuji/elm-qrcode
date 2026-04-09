@@ -1,5 +1,9 @@
 # Changelog
 
+### 4.0.3
+
+- Remove elm-community/list-extra dependency by @lydell (#27)
+
 ### 4.0.2
 
 - Remove inline `style` attribute by @choonkeat

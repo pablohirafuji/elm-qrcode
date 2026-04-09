@@ -236,7 +236,7 @@ header : Html msg
 header =
     h1 []
         [ text "Elm QR Code "
-        , small [] [ text "v4.0.2" ]
+        , small [] [ text "v4.0.3" ]
         ]
 
 

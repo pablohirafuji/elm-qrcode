@@ -1,7 +1,7 @@
 module Tests exposing (all)
 
 import Expect
-import Fuzz exposing (int, list, string, tuple)
+import Fuzz exposing (int, list, string)
 import ParseInt exposing (toRadixUnsafe)
 import QRCode.ECLevel as ECLevel
 import QRCode.Encode as Encode

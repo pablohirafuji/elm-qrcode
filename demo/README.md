@@ -8,7 +8,7 @@ All commands must be run in this folder (`demo`).
 elm reactor
 ```
 
-Open your browser at http://localhost:8000/ and navigate to src/Main.elm.
+Open your browser at http://localhost:8000/ and navigate to Main.elm.
 
 
 ## Build
