@@ -3,7 +3,6 @@ module QRCode.Encode.Numeric exposing
     , isValid
     )
 
-import List.Extra as List
 import QRCode.Error exposing (Error(..))
 import QRCode.Helpers exposing (breakStr, listResult)
 import Regex exposing (Regex)
@@ -31,7 +30,7 @@ encode str =
     List.foldr (Result.map2 (::))
         (Ok [])
         (List.map encodeHelp
-            (List.greedyGroupsOf 3 (String.toList str))
+            (greedyGroupsOf3 (String.toList str))
         )
 
 
@@ -58,3 +57,21 @@ numericLength str =
 
         _ ->
             10
+
+
+greedyGroupsOf3 : List a -> List (List a)
+greedyGroupsOf3 list =
+    greedyGroupsOf3Help [] list
+
+
+greedyGroupsOf3Help : List (List a) -> List a -> List (List a)
+greedyGroupsOf3Help acc list =
+    case list of
+        [] ->
+            List.reverse acc
+
+        v1 :: v2 :: v3 :: rest ->
+            greedyGroupsOf3Help ([ v1, v2, v3 ] :: acc) rest
+
+        _ ->
+            List.reverse (list :: acc)
